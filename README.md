@@ -1,4 +1,4 @@
-# MS Car Rental — Website
+# CSN Car Rental — Website
 
 A simple, modern, and professional one-page car rental website built with **pure HTML, CSS, and vanilla JavaScript**. No build step. No dependencies.
 
@@ -30,7 +30,7 @@ ms-car-rental/
 
 ```js
 const BUSINESS = {
-  name: "MS CAR RENTAL",
+  name: "CSN CAR RENTAL",
   phone: "+91 XXXXX XXXXX",
   phoneLink: "+91XXXXXXXXXX",   // no spaces
   whatsapp: "91XXXXXXXXXX",     // country code, no +
@@ -98,4 +98,4 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-© 2026 MS Car Rental. All Rights Reserved.
+© 2026 CSN Car Rental. All Rights Reserved.

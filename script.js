@@ -1,12 +1,12 @@
 /* ============================================================
-   MS CAR RENTAL — Configuration & Logic
+   CSN CAR RENTAL — Configuration & Logic
    ============================================================ */
 
 /* ------------------------------------------------------------
    1. BUSINESS INFO — EDIT THIS
    ------------------------------------------------------------ */
 const BUSINESS = {
-  name: "MS CAR RENTAL",
+  name: "CSN CAR RENTAL",
   tagline: "Reliable Cars. Comfortable Journeys.",
   phone: "+91 XXXXX XXXXX",           // Display text
   phoneLink: "+91XXXXXXXXXX",         // For tel: link (no spaces)
@@ -16,84 +16,124 @@ const BUSINESS = {
 };
 
 /* ------------------------------------------------------------
-   2. FLEET — ADD / REMOVE CARS HERE
+   2. FLEET — CATEGORIES AVAILABLE
    ------------------------------------------------------------ */
 const FLEET = [
   {
     id: 1,
-    name: "Maruti Suzuki Swift",
-    type: "Hatchback",
-    seats: "5 Seater",
-    transmission: "Manual",
-    fuel: "Petrol",
-    image:
-      "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=800&q=70",
+    name: "Innova Crysta",
+    type: "SUV",
+    seats: "6 / 7 Seater",
+    transmission: "Manual / Automatic",
+    fuel: "Diesel / Petrol",
+    image: "https://cdn-s3.autocarindia.com/Maruti-Suzuki/wagonr-flex-fuel/New_Crysta.png?w=728&q=75&fm=auto",
+    alt: "Toyota Innova Crysta SUV available for rental",
   },
   {
     id: 2,
-    name: "Hyundai Creta",
-    type: "SUV",
+    name: "Swift",
+    type: "Sedan",
     seats: "5 Seater",
-    transmission: "Manual / Automatic",
-    fuel: "Petrol / Diesel",
-    image:
-      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=70",
+    transmission: "Manual",
+    fuel: "Petrol",
+    image: "https://spn-sta.spinny.com/blog/20240509161023/new-Maruti-Swift-1160x653.webp?compress=true&quality=80&w=1200&dpr=1.3",
+    alt: "Maruti Suzuki Swift sedan available for rental",
   },
   {
     id: 3,
-    name: "Toyota Innova",
-    type: "MPV",
-    seats: "7 Seater",
+    name: "Aura",
+    type: "Sedan",
+    seats: "5 Seater",
     transmission: "Manual / Automatic",
-    fuel: "Diesel",
-    image:
-      "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=70",
+    fuel: "Petrol / CNG",
+    image: "https://stimg.cardekho.com/images/car-images/930x620/Hyundai/Aura/10126/1694588903385/221_typhoon-silver_b4b9c4.jpg",
+    alt: "Hyundai Aura sedan available for rental",
   },
   {
     id: 4,
-    name: "Mahindra Scorpio",
-    type: "SUV",
-    seats: "7 Seater",
+    name: "Ciaz",
+    type: "Sedan",
+    seats: "5 Seater",
+    transmission: "Manual / Automatic",
+    fuel: "Petrol / Diesel",
+    image: "https://stimg.cardekho.com/images/car-images/930x620/Maruti/Ciaz/7407/1655790491978/222_Pearl-Metallic-Dignity-Brown-_482d19.jpg",
+    alt: "Maruti Suzuki Ciaz sedan available for rental",
+  },
+  {
+    id: 5,
+    name: "Force Urbania",
+    type: "Urbania",
+    seats: "17 Seater",
     transmission: "Manual",
     fuel: "Diesel",
-    image:
-      "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=800&q=70",
+    image: "https://stimg.cardekho.com/images/carexteriorimages/930x620/Force/Urbania/11849/1763466348855/front-left-side-47.jpg",
+    alt: "Force Urbania 17 seater van available for rental",
+  },
+  {
+    id: 6,
+    name: "Tempo Traveller",
+    type: "Tempo Traveller",
+    seats: "12 / 17 Seater",
+    transmission: "Manual",
+    fuel: "Diesel",
+    image: "https://www.prabutourstravels.com/assets/images/fleet/force-14-seater-traveller.webp",
+    alt: "Tempo Traveller van available for rental",
+  },
+  {
+    id: 7,
+    name: "Mini Bus",
+    type: "Mini Bus",
+    seats: "20 / 25 Seater",
+    transmission: "Manual",
+    fuel: "Diesel",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR62-1dAZsCeqLUprH1YDQb-AC2binpfEnUSkjmjKMwsA&s=10",
+    alt: "Mini bus available for group travel rental",
+  },
+  {
+    id: 8,
+    name: "45 Seater Bus",
+    type: "45 Seater Bus",
+    seats: "45 Seater • AC",
+    transmission: "Manual",
+    fuel: "Diesel",
+    image: "https://www.chennaitourstravelss.com/images/car/detail/40seater-ac-volvo.webp",
+    alt: "45 seater AC bus available for large group rental",
   },
 ];
 
 /* ------------------------------------------------------------
-   3. SERVICES — ADD / REMOVE HERE
+   3. SERVICES — WHAT WE OFFER
    ------------------------------------------------------------ */
 const SERVICES = [
   {
+    icon: "🚙",
+    title: "SUV",
+    text: "Innova Crysta — spacious and comfortable for family and business trips.",
+  },
+  {
     icon: "🚗",
-    title: "Local Car Rental",
-    text: "Convenient cars for city travel and daily requirements.",
+    title: "Sedan",
+    text: "Swift, Aura, Ciaz — smooth and economical for city and highway travel.",
   },
   {
-    icon: "🛣️",
-    title: "Outstation Travel",
-    text: "Comfortable vehicles for longer journeys and trips.",
+    icon: "🚐",
+    title: "Urbania",
+    text: "Force Urbania, 17 Seater — premium group travel with extra comfort.",
   },
   {
-    icon: "👨‍👩‍👧",
-    title: "Family Travel",
-    text: "Spacious and comfortable cars for family journeys.",
+    icon: "🚐",
+    title: "Tempo Traveller",
+    text: "Reliable option for medium-sized groups and outstation journeys.",
   },
   {
-    icon: "💼",
-    title: "Business Travel",
-    text: "Professional and reliable transportation for business requirements.",
+    icon: "🚌",
+    title: "Mini Bus",
+    text: "Comfortable group transport for tours, events, and family functions.",
   },
   {
-    icon: "✈️",
-    title: "Airport / Station Pickup",
-    text: "Convenient transportation for airport or railway station travel.",
-  },
-  {
-    icon: "🔑",
-    title: "Self Drive / With Driver",
-    text: "Flexible options to suit your travel preference.",
+    icon: "🚌",
+    title: "45 Seater Bus",
+    text: "AC Available — ideal for large groups, tours, and corporate travel.",
   },
 ];
 
@@ -114,7 +154,7 @@ const WHY_US = [
   {
     icon: "🚙",
     title: "Flexible Options",
-    text: "Different vehicle options for different travel needs.",
+    text: "From sedans to 45-seater buses — for every group size.",
   },
   {
     icon: "☎️",
@@ -134,7 +174,6 @@ function applyBusinessInfo() {
     el.textContent = BUSINESS.tagline;
   });
   document.querySelectorAll("[data-phone]").forEach((el) => {
-    // Only replace text if element is not a link with icon
     if (el.tagName === "A" && !el.textContent.includes("📞")) {
       el.textContent = BUSINESS.phone;
     } else if (el.tagName !== "A") {
@@ -157,7 +196,6 @@ function applyBusinessInfo() {
     el.href = `https://wa.me/${BUSINESS.whatsapp}`;
   });
 
-  // Footer year
   const yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 }
@@ -173,7 +211,7 @@ function renderFleet() {
     (car) => `
     <div class="car-card">
       <div class="car-image">
-        <img src="${car.image}" alt="${car.name}" loading="lazy" />
+        <img src="${car.image}" alt="${car.alt || car.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=1000&q=75'" />
       </div>
       <div class="car-body">
         <div class="car-name">${car.name}</div>
@@ -191,7 +229,6 @@ function renderFleet() {
   `
   ).join("");
 
-  // Attach WhatsApp enquiry handlers
   grid.querySelectorAll("[data-enquire]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const carName = btn.getAttribute("data-enquire");
@@ -247,11 +284,10 @@ function populateCarSelect() {
   const select = document.getElementById("carSelect");
   if (!select) return;
 
-  // Keep first "Select a car" and add fleet before "Other"
   FLEET.forEach((car) => {
     const opt = document.createElement("option");
     opt.value = car.name;
-    opt.textContent = car.name;
+    opt.textContent = `${car.name} (${car.type})`;
     select.insertBefore(opt, select.lastElementChild);
   });
 }
@@ -273,7 +309,6 @@ function setupNav() {
     );
   });
 
-  // Close on link click
   links.querySelectorAll("a").forEach((a) => {
     a.addEventListener("click", () => {
       toggle.classList.remove("open");
@@ -307,7 +342,6 @@ function setupForm() {
     const data = new FormData(form);
     const values = Object.fromEntries(data.entries());
 
-    // Validation
     let valid = true;
     if (!values.name || !values.name.trim()) {
       showError("name", "Please enter your name");
@@ -324,10 +358,8 @@ function setupForm() {
       showError("pickup", "Please enter a pickup location");
       valid = false;
     }
-
     if (!valid) return;
 
-    // Build WhatsApp message
     const lines = [
       `Hello ${BUSINESS.name},`,
       "",
