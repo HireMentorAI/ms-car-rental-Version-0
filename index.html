@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>MS Car Rental | Reliable Car Rental Services</title>
+  <meta
+    name="description"
+    content="MS Car Rental provides convenient and comfortable car rental services for local, outstation, family, and business travel."
+  />
+  <meta name="theme-color" content="#1e3a5f" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="MS Car Rental | Reliable Car Rental Services" />
+  <meta
+    property="og:description"
+    content="Convenient and comfortable car rental services for local, outstation, family, and business travel."
+  />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============ TOP BAR ============ -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="topbar-left">
+        Affordable Car Rentals • Clean &amp; Comfortable Cars • Easy Booking
+      </div>
+      <div class="topbar-right">
+        <a href="tel:+91XXXXXXXXXX" data-phone>📞 +91 XXXXX XXXXX</a>
+        <a href="#" data-whatsapp-link target="_blank" rel="noopener">💬 WhatsApp</a>
+        <a href="#contact" data-location>📍 City, Maharashtra</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ NAVBAR ============ -->
+  <header class="navbar">
+    <div class="container navbar-inner">
+      <a href="#home" class="logo" data-name-link>MS CAR RENTAL <span>| CSN</span></a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#cars">Cars</a></li>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#why-us">Why Us</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+
+      <div class="nav-right">
+        <a href="#contact" class="btn btn-primary btn-sm nav-cta">Book Now</a>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+          <span class="hamburger">
+            <span></span><span></span><span></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section id="home" class="hero">
+      <div class="container hero-inner">
+        <div>
+          <span class="hero-badge" data-tagline>Reliable Cars. Comfortable Journeys.</span>
+          <h1>Reliable Car Rental for Every Journey</h1>
+          <p>
+            Choose a comfortable and reliable car for your local travel, business
+            trips, family journeys, and outstation travel.
+          </p>
+          <div class="hero-cta">
+            <a href="#contact" class="btn btn-primary">Book a Car</a>
+            <a href="#contact" class="btn btn-outline">Contact Us</a>
+          </div>
+        </div>
+
+        <div class="hero-image">
+          <img
+            src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1200&q=75"
+            alt="Comfortable car available for rental"
+            loading="eager"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section id="about" class="section">
+      <div class="container about-grid">
+        <div class="about-text">
+          <h2>About MS Car Rental</h2>
+          <p>
+            MS Car Rental provides convenient vehicle rental services for customers
+            who need comfortable and reliable transportation. Whether it is a short
+            local trip, a family journey, or business travel, our focus is on
+            offering a smooth and easy rental experience.
+          </p>
+          <p>
+            We aim to make booking simple, keep our vehicles well-maintained, and
+            support our customers with friendly service.
+          </p>
+
+          <div class="about-highlights">
+            <div class="highlight">
+              <div class="highlight-icon">🚘</div>
+              <div>
+                <h4>Reliable Vehicles</h4>
+                <p>Well-maintained cars ready for your journey.</p>
+              </div>
+            </div>
+            <div class="highlight">
+              <div class="highlight-icon">📅</div>
+              <div>
+                <h4>Easy Booking</h4>
+                <p>Quick and simple enquiry and booking process.</p>
+              </div>
+            </div>
+            <div class="highlight">
+              <div class="highlight-icon">🤝</div>
+              <div>
+                <h4>Customer-Focused Service</h4>
+                <p>Friendly support for every rental need.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-image">
+          <img
+            src="https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=900&q=75"
+            alt="Car rental service"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FLEET ============ -->
+    <section id="cars" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Our Cars</h2>
+        <p class="section-sub">
+          A selection of vehicles for different travel needs. Availability may vary.
+        </p>
+        <div class="fleet-grid" id="fleetGrid"></div>
+      </div>
+    </section>
+
+    <!-- ============ SERVICES ============ -->
+    <section id="services" class="section">
+      <div class="container">
+        <h2 class="section-title">Our Rental Services</h2>
+        <p class="section-sub">
+          Flexible rental options for different travel requirements.
+        </p>
+        <div class="services-grid" id="servicesGrid"></div>
+      </div>
+    </section>
+
+    <!-- ============ WHY CHOOSE US ============ -->
+    <section id="why-us" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Why Choose MS Car Rental?</h2>
+        <p class="section-sub">
+          A simple and straightforward approach to car rental.
+        </p>
+        <div class="why-grid" id="whyGrid"></div>
+      </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-sub">Booking a car with us takes just a few steps.</p>
+        <div class="steps-grid">
+          <div class="step">
+            <div class="step-number">01</div>
+            <div class="step-icon">🚗</div>
+            <h3>Choose Your Car</h3>
+            <p>Browse our available vehicles and pick the one that suits your trip.</p>
+          </div>
+          <div class="step">
+            <div class="step-number">02</div>
+            <div class="step-icon">📩</div>
+            <h3>Send Your Enquiry</h3>
+            <p>Share your travel details through WhatsApp or the enquiry form.</p>
+          </div>
+          <div class="step">
+            <div class="step-number">03</div>
+            <div class="step-icon">✅</div>
+            <h3>Confirm Your Journey</h3>
+            <p>We confirm availability and rental details — you are ready to go.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CTA ============ -->
+    <section class="cta-section">
+      <div class="container">
+        <h2>Ready to Start Your Journey?</h2>
+        <p>
+          Choose your car and contact MS Car Rental for availability and booking
+          details.
+        </p>
+        <div class="cta-buttons">
+          <a href="#contact" class="btn btn-primary">Book Now</a>
+          <a href="#" class="btn btn-whatsapp" data-whatsapp-link target="_blank" rel="noopener">
+            💬 WhatsApp Us
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTACT ============ -->
+    <section id="contact" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Contact &amp; Enquiry</h2>
+        <p class="section-sub">
+          Send us your details and we will get back to you with availability and
+          rental information.
+        </p>
+
+        <div class="contact-grid">
+          <!-- Contact Info -->
+          <div class="contact-info">
+            <h3 data-name>MS CAR RENTAL</h3>
+            <p>Reach out through any of the options below.</p>
+
+            <div class="contact-item">
+              <div class="contact-icon">📞</div>
+              <div>
+                <div class="contact-item-label">Phone</div>
+                <div class="contact-item-value">
+                  <a href="tel:+91XXXXXXXXXX" data-phone>+91 XXXXX XXXXX</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="contact-item">
+              <div class="contact-icon">💬</div>
+              <div>
+                <div class="contact-item-label">WhatsApp</div>
+                <div class="contact-item-value">
+                  <a href="#" data-whatsapp-link target="_blank" rel="noopener" data-phone>
+                    +91 XXXXX XXXXX
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="contact-item">
+              <div class="contact-icon">✉️</div>
+              <div>
+                <div class="contact-item-label">Email</div>
+                <div class="contact-item-value">
+                  <a href="mailto:example@email.com" data-email>example@email.com</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="contact-item">
+              <div class="contact-icon">📍</div>
+              <div>
+                <div class="contact-item-label">Location</div>
+                <div class="contact-item-value" data-location>City, Maharashtra</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enquiry Form -->
+          <div class="contact-form">
+            <div class="form-title">Send an Enquiry</div>
+            <div class="form-subtitle">
+              Fill in the details and click send — it will open WhatsApp with your enquiry.
+            </div>
+
+            <div class="form-success" id="formSuccess">
+              ✅ Your enquiry has been prepared. If WhatsApp did not open, please
+              allow pop-ups and try again.
+            </div>
+
+            <form id="enquiryForm" novalidate>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Full Name <span class="req">*</span></label>
+                  <input type="text" name="name" placeholder="Your name" />
+                  <div class="form-error" data-error="name"></div>
+                </div>
+
+                <div class="form-group">
+                  <label>Phone Number <span class="req">*</span></label>
+                  <input type="tel" name="phone" placeholder="+91 XXXXX XXXXX" />
+                  <div class="form-error" data-error="phone"></div>
+                </div>
+
+                <div class="form-group">
+                  <label>Car Required</label>
+                  <select name="car" id="carSelect">
+                    <option value="">Select a car</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>Travel Date</label>
+                  <input type="date" name="date" />
+                </div>
+
+                <div class="form-group">
+                  <label>Number of Passengers</label>
+                  <input type="number" name="passengers" min="1" placeholder="e.g. 4" />
+                </div>
+
+                <div class="form-group">
+                  <label>Pickup Location <span class="req">*</span></label>
+                  <input type="text" name="pickup" placeholder="Pickup city / area" />
+                  <div class="form-error" data-error="pickup"></div>
+                </div>
+
+                <div class="form-group full">
+                  <label>Message</label>
+                  <textarea name="message" placeholder="Any additional details about your trip..."></textarea>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block">Send Enquiry</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h4 data-name>MS CAR RENTAL</h4>
+          <p data-tagline>Reliable Cars. Comfortable Journeys.</p>
+          <div class="footer-contact">
+            <a href="tel:+91XXXXXXXXXX" data-phone>📞 +91 XXXXX XXXXX</a>
+            <a href="#" data-whatsapp-link target="_blank" rel="noopener">💬 WhatsApp</a>
+            <a href="mailto:example@email.com" data-email>✉️ example@email.com</a>
+            <span data-location>📍 City, Maharashtra</span>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h5>Quick Links</h5>
+          <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#cars">Cars</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Contact</h5>
+          <ul>
+            <li><a href="tel:+91XXXXXXXXXX" data-phone>+91 XXXXX XXXXX</a></li>
+            <li>
+              <a href="#" data-whatsapp-link target="_blank" rel="noopener">WhatsApp Booking</a>
+            </li>
+            <li><a href="mailto:example@email.com" data-email>example@email.com</a></li>
+            <li><span data-location>City, Maharashtra</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        © <span id="year"></span> <span data-name>MS Car Rental</span>. All Rights Reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
