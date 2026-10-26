@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>CSN Car Rental | Reliable Car Rental Services</title>
+  <meta
+    name="description"
+    content="CSN Car Rental provides convenient and comfortable car rental services for local, outstation, family, and business travel."
+  />
+  <meta name="theme-color" content="#1e3a5f" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="CSN Car Rental | Reliable Car Rental Services" />
+  <meta
+    property="og:description"
+    content="Convenient and comfortable car rental services for local, outstation, family, and business travel."
+  />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============ TOP BAR ============ -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="topbar-left">
+        Affordable Car Rentals • Clean &amp; Comfortable Cars • Easy Booking
+      </div>
+      <div class="topbar-right">
+        <a href="#contact" data-location>📍 City, Maharashtra</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ NAVBAR ============ -->
+  <header class="navbar">
+    <div class="container navbar-inner">
+      <a href="#home" class="logo" data-name-link>CSN CAR RENTAL <span>| CSN</span></a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#cars">Cars</a></li>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#tourism">Tourism</a></li>
+        <li><a href="#why-us">Why Us</a></li>
+      </ul>
+
+      <div class="nav-right">
+        <a href="#contact" class="btn btn-primary btn-sm nav-cta">Book Now</a>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+          <span class="hamburger">
+            <span></span><span></span><span></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HERO ============ -->
+    <section id="home" class="hero">
+      <div class="container hero-inner">
+        <div>
+          <span class="hero-badge" data-tagline>Reliable Cars. Comfortable Journeys.</span>
+          <h1>Reliable Car Rental for Every Journey</h1>
+          <p>
+            Choose a comfortable and reliable car for your local travel, business
+            trips, family journeys, and outstation travel.
+          </p>
+          <div class="hero-cta">
+            <a href="#contact" class="btn btn-primary">Book a Car</a>
+            <a href="#contact" class="btn btn-outline">Contact Us</a>
+          </div>
+        </div>
+
+        <div class="hero-image">
+          <img
+            src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1200&q=75"
+            alt="Comfortable car available for rental"
+            loading="eager"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section id="about" class="section">
+      <div class="container about-grid">
+        <div class="about-text">
+          <h2>About CSN Car Rental</h2>
+          <p>
+            CSN Car Rental provides convenient vehicle rental services for customers
+            who need comfortable and reliable transportation. Whether it is a short
+            local trip, a family journey, or business travel, our focus is on
+            offering a smooth and easy rental experience.
+          </p>
+          <p>
+            We aim to make booking simple, keep our vehicles well-maintained, and
+            support our customers with friendly service.
+          </p>
+
+          <div class="about-highlights">
+            <div class="highlight">
+              <div class="highlight-icon">🚘</div>
+              <div>
+                <h4>Reliable Vehicles</h4>
+                <p>Well-maintained cars ready for your journey.</p>
+              </div>
+            </div>
+            <div class="highlight">
+              <div class="highlight-icon">📅</div>
+              <div>
+                <h4>Easy Booking</h4>
+                <p>Quick and simple enquiry and booking process.</p>
+              </div>
+            </div>
+            <div class="highlight">
+              <div class="highlight-icon">🤝</div>
+              <div>
+                <h4>Customer-Focused Service</h4>
+                <p>Friendly support for every rental need.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-image">
+          <img
+            src="https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=900&q=75"
+            alt="Car rental service"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FLEET ============ -->
+    <section id="cars" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Our Cars</h2>
+        <p class="section-sub">
+          A selection of vehicles for different travel needs. Availability may vary.
+        </p>
+        <div class="fleet-grid" id="fleetGrid"></div>
+      </div>
+    </section>
+
+    <!-- ============ SERVICES ============ -->
+    <section id="services" class="section">
+      <div class="container">
+        <h2 class="section-title">Our Rental Services</h2>
+        <p class="section-sub">
+          Flexible rental options for different travel requirements.
+        </p>
+        <div class="services-grid" id="servicesGrid"></div>
+      </div>
+    </section>
+
+    <!-- ============ TOURISM & TRANSPORTATION ============ -->
+    <section id="tourism" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Tourism &amp; Transportation</h2>
+        <p class="section-sub">
+          Pilgrimage journeys, airport rides, and travel planned around your needs.
+        </p>
+        <div class="tourism-grid" id="tourismGrid"></div>
+        <div class="tourism-cta">
+          <a href="#contact" class="btn btn-primary">Send Enquiry</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ WHY CHOOSE US ============ -->
+    <section id="why-us" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Why Choose CSN Car Rental?</h2>
+        <p class="section-sub">
+          A simple and straightforward approach to car rental.
+        </p>
+        <div class="why-grid" id="whyGrid"></div>
+      </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-sub">Booking a car with us takes just a few steps.</p>
+        <div class="steps-grid">
+          <div class="step">
+            <div class="step-number">01</div>
+            <div class="step-icon">🚗</div>
+            <h3>Choose Your Car</h3>
+            <p>Browse our available vehicles and pick the one that suits your trip.</p>
+          </div>
+          <div class="step">
+            <div class="step-number">02</div>
+            <div class="step-icon">📩</div>
+            <h3>Send Your Enquiry</h3>
+            <p>Share your travel details through the enquiry form.</p>
+          </div>
+          <div class="step">
+            <div class="step-number">03</div>
+            <div class="step-icon">✅</div>
+            <h3>Confirm Your Journey</h3>
+            <p>We confirm availability and rental details — you are ready to go.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CTA ============ -->
+    <section class="cta-section">
+      <div class="container">
+        <h2>Ready to Start Your Journey?</h2>
+        <p>
+          Choose your car and contact CSN Car Rental for availability and booking
+          details.
+        </p>
+        <div class="cta-buttons">
+          <a href="#contact" class="btn btn-primary">Book Now</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTACT ============ -->
+    <section id="contact" class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">Contact &amp; Enquiry</h2>
+        <p class="section-sub">
+          Send us your details and we will get back to you with availability and
+          rental information.
+        </p>
+
+        <div class="contact-grid">
+          <!-- Contact Info -->
+          <div class="contact-info">
+            <h3 data-name>CSN CAR RENTAL</h3>
+            <p>Send a rental enquiry using the form.</p>
+
+            <div class="contact-item">
+              <div class="contact-icon">📍</div>
+              <div>
+                <div class="contact-item-label">Location</div>
+                <div class="contact-item-value" data-location>City, Maharashtra</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enquiry Form -->
+          <div class="contact-form">
+            <div class="form-title">Send an Enquiry</div>
+            <div class="form-subtitle">
+              Share your trip details and we will get back to you.
+            </div>
+
+            <div class="form-status" id="formStatus" role="status" aria-live="polite" aria-atomic="true"></div>
+
+            <form id="enquiryForm" action="https://api.web3forms.com/submit" method="POST" novalidate>
+              <input type="hidden" name="access_key" value="c13992d0-c95f-409c-ad9b-02a4ce47f891" />
+              <input type="hidden" name="subject" value="New car rental enquiry" />
+              <input type="hidden" name="form_name" value="Car Rental Enquiry" />
+              <input type="hidden" name="page" value="Contact &amp; Enquiry section" />
+              <input type="hidden" name="submitted_at" id="submittedAt" />
+              <input type="text" name="botcheck" class="honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" />
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="enquiryName">Full Name <span class="req">*</span></label>
+                  <input type="text" id="enquiryName" name="name" placeholder="Your name" maxlength="80" autocomplete="name" required aria-describedby="nameError" />
+                  <div class="form-error" id="nameError" data-error="name"></div>
+                </div>
+
+                <div class="form-group">
+                  <label for="enquiryPhone">Phone Number <span class="req">*</span></label>
+                  <input type="tel" id="enquiryPhone" name="phone" placeholder="+91 XXXXX XXXXX" maxlength="40" autocomplete="tel" required aria-describedby="phoneError" />
+                  <div class="form-error" id="phoneError" data-error="phone"></div>
+                </div>
+
+                <div class="form-group">
+                  <label for="enquiryEmail">Email <span class="req">*</span></label>
+                  <input type="email" id="enquiryEmail" name="email" placeholder="you@example.com" maxlength="254" autocomplete="email" required aria-describedby="emailError" />
+                  <div class="form-error" id="emailError" data-error="email"></div>
+                </div>
+
+                <div class="form-group">
+                  <label for="serviceSelect">Select Your Service <span class="req">*</span></label>
+                  <select name="service" id="serviceSelect" required aria-describedby="serviceError">
+                    <option value="">Select a service</option>
+                  </select>
+                  <div class="form-error" id="serviceError" data-error="service"></div>
+                </div>
+
+                <div class="form-group">
+                  <label for="carSelect">Car Required <span class="req">*</span></label>
+                  <select name="car" id="carSelect" required aria-describedby="carError">
+                    <option value="">Select a car</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <div class="form-error" id="carError" data-error="car"></div>
+                </div>
+
+                <div class="form-group">
+                  <label for="travelDate">Travel Date <span class="req">*</span></label>
+                  <input type="date" id="travelDate" name="date" required aria-describedby="dateError" />
+                  <div class="form-error" id="dateError" data-error="date"></div>
+                </div>
+
+                <div class="form-group">
+                  <label for="passengers">Number of Passengers <span class="req">*</span></label>
+                  <input type="text" id="passengers" name="passengers" inputmode="numeric" pattern="[0-9]*" maxlength="3" required placeholder="e.g. 4" aria-describedby="passengersError" />
+                  <div class="form-error" id="passengersError" data-error="passengers"></div>
+                </div>
+
+                <div class="form-group">
+                  <label for="pickup">Pickup Location <span class="req">*</span></label>
+                  <input type="text" id="pickup" name="pickup" placeholder="Pickup city / area" maxlength="160" required aria-describedby="pickupError" />
+                  <div class="form-error" id="pickupError" data-error="pickup"></div>
+                </div>
+
+                <div class="form-group full">
+                  <label for="enquiryMessage">Message <span class="req">*</span></label>
+                  <textarea id="enquiryMessage" name="message" maxlength="3000" required aria-describedby="messageError" placeholder="Any additional details about your trip..."></textarea>
+                  <div class="form-error" id="messageError" data-error="message"></div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block">Send Enquiry</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h4 data-name>CSN CAR RENTAL</h4>
+          <p data-tagline>Reliable Cars. Comfortable Journeys.</p>
+          <div class="footer-contact">
+            <span data-location>📍 City, Maharashtra</span>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h5>Quick Links</h5>
+          <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#cars">Cars</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#tourism">Tourism &amp; Transportation</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Contact</h5>
+          <ul>
+            <li><a href="#contact">Send an enquiry</a></li>
+            <li><span data-location>City, Maharashtra</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        © <span id="year"></span> <span data-name>CSN Car Rental</span>. All Rights Reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
