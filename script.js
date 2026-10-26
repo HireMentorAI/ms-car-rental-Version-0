@@ -1,12 +1,12 @@
 /* ============================================================
-   CSN CAR RENTAL — Configuration & Logic
+   Gosavi Ventures — Configuration & Logic
    ============================================================ */
 
 /* ------------------------------------------------------------
    1. BUSINESS INFO — EDIT THIS
    ------------------------------------------------------------ */
 const BUSINESS = {
-  name: "CSN CAR RENTAL",
+  name: "Gosavi Ventures",
   tagline: "Reliable Cars. Comfortable Journeys.",
   location: "City, Maharashtra",
 };
