@@ -36,7 +36,7 @@ ms-car-rental/
 ```js
 const BUSINESS = {
   name: "Jain Ventures",
-  location: "City, Maharashtra",
+  location: "N 11 D Sector Ravi Nagar, Hudco T.V center road, Chhatrapati Sambhaji Nagar MH India 431003",
 };
 
 const FLEET = [ ... ];            // add/remove cars
