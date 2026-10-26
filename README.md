@@ -1,4 +1,4 @@
-# Gosavi Ventures — Website
+# Jain Ventures — Website
 
 A simple, modern, and professional one-page car rental website built with **pure HTML, CSS, and vanilla JavaScript**. No build step. No dependencies.
 
@@ -35,7 +35,7 @@ ms-car-rental/
 
 ```js
 const BUSINESS = {
-  name: "Gosavi Ventures",
+  name: "Jain Ventures",
   location: "City, Maharashtra",
 };
 
@@ -131,4 +131,4 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-© 2026 Gosavi Ventures. All Rights Reserved.
+© 2026 Jain Ventures. All Rights Reserved.

@@ -1,12 +1,12 @@
 /* ============================================================
-   Gosavi Ventures — Configuration & Logic
+   Jain Ventures — Configuration & Logic
    ============================================================ */
 
 /* ------------------------------------------------------------
    1. BUSINESS INFO — EDIT THIS
    ------------------------------------------------------------ */
 const BUSINESS = {
-  name: "Gosavi Ventures",
+  name: "Jain Ventures",
   tagline: "Reliable Cars. Comfortable Journeys.",
   location: "City, Maharashtra",
 };
