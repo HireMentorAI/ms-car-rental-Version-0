@@ -247,15 +247,15 @@ async function handleContact(req, res) {
   try {
     const formData = {
       access_key: process.env.WEB3FORMS_ACCESS_KEY,
-      subject: "New car rental enquiry",
-      form_name: "Car Rental Enquiry",
+      subject: "New Tourism Enquiry - CSN AI",
+      form_name: "CSN AI Tourism Enquiry",
       name,
       phone,
       service,
-      car,
-      date,
+      car_required: car,
+      travel_date: date,
       passengers,
-      pickup,
+      pickup_location: pickup,
       message,
     };
     if (email) formData.email = email;
