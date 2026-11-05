@@ -185,38 +185,15 @@ const TOURISM_SERVICES = [
   },
 ];
 
-const NAME_PATTERN = /^\p{L}[\p{L}\p{M}]*(?:(?:[ '\u2019-]\p{L}[\p{L}\p{M}]*)|(?:\.\s?\p{L}[\p{L}\p{M}]*))*\.?$/u;
+const NAME_PATTERN = /^\p{L}+(?:(?:[ '-]\p{L}+)|(?:\.\s?\p{L}+))*(?:\.)?$/u;
 const EMAIL_PATTERN = /^(?!.*\.\.)[A-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,63}$/i;
-const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
-let MAX_PASSENGERS = 40;
-let MIN_TRAVEL_DATE = localDateString();
 
-function normalizePhone(value) {
-  if (!value || !/^[+0-9\s().-]+$/.test(value)) return null;
-  let compact = value.replace(/[\s().-]/g, "");
-  if (compact.startsWith("00")) compact = `+${compact.slice(2)}`;
-  if (compact.startsWith("+")) return /^\+[1-9]\d{7,14}$/.test(compact) ? compact : null;
-  if (/^[6-9]\d{9}$/.test(compact)) return `+91${compact}`;
-  if (/^0[6-9]\d{9}$/.test(compact)) return `+91${compact.slice(1)}`;
-  return null;
-}
+function normalizeIndianPhone(value) {
+  const phone = value.trim();
+  if (!/^(?:\+91[\s-]?)?[6-9](?:[\s-]?\d){9}$/.test(phone)) return null;
 
-function hasUnsafeText(value) {
-  return /[<>]/.test(value) || CONTROL_CHARS.test(value);
-}
-
-function localDateString(date = new Date()) {
-  const offset = date.getTimezoneOffset() * 60000;
-  return new Date(date.getTime() - offset).toISOString().slice(0, 10);
-}
-
-function isValidIsoDate(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const [year, month, day] = value.split("-").map(Number);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  return parsed.getUTCFullYear() === year &&
-    parsed.getUTCMonth() === month - 1 &&
-    parsed.getUTCDate() === day;
+  const digits = phone.replace(/[\s-]/g, "").replace(/^\+91/, "");
+  return /^[6-9]\d{9}$/.test(digits) ? `+91${digits}` : null;
 }
 
 /* ------------------------------------------------------------
@@ -274,7 +251,7 @@ function renderFleet() {
     (car) => `
     <div class="car-card">
       <div class="car-image">
-        <img src="${car.image}" alt="${car.alt || car.name}" loading="lazy" />
+        <img src="${car.image}" alt="${car.alt || car.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=1000&q=75'" />
       </div>
       <div class="car-body">
         <div class="car-name">${car.name}</div>
@@ -291,12 +268,6 @@ function renderFleet() {
     </div>
   `
   ).join("");
-
-  grid.querySelectorAll(".car-image img").forEach((image) => {
-    image.addEventListener("error", () => {
-      image.src = "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=1000&q=75";
-    }, { once: true });
-  });
 
   grid.querySelectorAll("[data-enquire]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -458,48 +429,6 @@ function setupForm() {
     status.setAttribute("role", isError ? "alert" : "status");
   };
 
-  const submitButton = form.querySelector("button[type='submit']");
-  const dateInput = form.elements.namedItem("date");
-  const passengerInput = form.elements.namedItem("passengers");
-  const isStaticPreview = window.location.protocol === "file:";
-  if (dateInput instanceof HTMLInputElement) dateInput.min = localDateString();
-
-  const initializeSecurityCheck = async () => {
-    if (isStaticPreview) {
-      submitButton.disabled = false;
-      showStatus(
-        "Preview mode: you can check the form, but enquiries are not sent. Run with Vercel Dev to enable secure submission.",
-        false
-      );
-      return;
-    }
-
-    try {
-      const configResponse = await fetch("/api/form-config", {
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-        credentials: "same-origin",
-      });
-      if (!configResponse.ok) throw new Error("Form security configuration unavailable");
-      const config = await configResponse.json();
-      const configuredLimit = Number(config.maxPassengers);
-      if (Number.isInteger(configuredLimit) && configuredLimit >= 1 && configuredLimit <= 100) {
-        MAX_PASSENGERS = configuredLimit;
-        if (passengerInput instanceof HTMLInputElement) passengerInput.max = String(MAX_PASSENGERS);
-      }
-      if (typeof config.today === "string" && /^\d{4}-\d{2}-\d{2}$/.test(config.today)) {
-        MIN_TRAVEL_DATE = config.today;
-        if (dateInput instanceof HTMLInputElement) dateInput.min = MIN_TRAVEL_DATE;
-      }
-      submitButton.disabled = false;
-    } catch {
-      // The server repeats all security checks. Keep the form usable with client defaults
-      // if this optional date/passenger configuration endpoint is unavailable.
-      submitButton.disabled = false;
-    }
-  };
-  initializeSecurityCheck();
-
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -511,9 +440,13 @@ function setupForm() {
     const data = new FormData(form);
     const values = Object.fromEntries(data.entries());
 
-    for (const field of ["name", "phone", "email", "service", "car", "date", "passengers", "pickup", "message"]) {
-      values[field] = typeof values[field] === "string" ? values[field].trim() : "";
-    }
+    values.name = values.name.trim();
+    values.phone = values.phone.trim();
+    values.email = values.email.trim();
+    values.car = values.car.trim();
+    values.date = values.date.trim();
+    values.pickup = values.pickup.trim();
+    values.message = values.message.trim();
 
     let valid = true;
     if (!values.name) {
@@ -522,24 +455,27 @@ function setupForm() {
     } else if (
       values.name.length < 2 ||
       values.name.length > 80 ||
-      !NAME_PATTERN.test(values.name) || hasUnsafeText(values.name)
+      !NAME_PATTERN.test(values.name)
     ) {
       showError("name", "Enter a valid name using 2–80 letters, spaces, periods, apostrophes, or hyphens");
       valid = false;
     }
-    const normalizedPhone = values.phone ? normalizePhone(values.phone) : null;
+    const normalizedPhone = values.phone ? normalizeIndianPhone(values.phone) : null;
     if (!values.phone) {
       showError("phone", "Please enter your phone number");
       valid = false;
     } else if (!normalizedPhone) {
-      showError("phone", "Enter a valid phone number with digits only (for example, +91 98765 43210)");
+      showError("phone", "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9");
       valid = false;
     }
-    if (values.email && (
+    if (!values.email) {
+      showError("email", "Please enter your email address");
+      valid = false;
+    } else if (
       values.email.length > 254 ||
       values.email.split("@")[0].length > 64 ||
       !EMAIL_PATTERN.test(values.email)
-    )) {
+    ) {
       showError("email", "Please enter a valid email address");
       valid = false;
     }
@@ -551,8 +487,8 @@ function setupForm() {
       showError("car", "Please select a car");
       valid = false;
     }
-    if (!isValidIsoDate(values.date) || !dateInput.validity.valid || values.date < MIN_TRAVEL_DATE) {
-      showError("date", "Please select today or a future travel date");
+    if (!values.date || !form.elements.namedItem("date").validity.valid) {
+      showError("date", "Please select a valid travel date");
       valid = false;
     }
     if (!values.passengers) {
@@ -560,20 +496,16 @@ function setupForm() {
       valid = false;
     } else if (!/^\d{1,3}$/.test(values.passengers) ||
       Number(values.passengers) < 1 ||
-      Number(values.passengers) > MAX_PASSENGERS) {
-      showError("passengers", `Enter a whole number of passengers between 1 and ${MAX_PASSENGERS}`);
+      Number(values.passengers) > 40) {
+      showError("passengers", "Enter a whole number of passengers between 1 and 40");
       valid = false;
     }
-    if (!values.pickup || values.pickup.length > 160 || hasUnsafeText(values.pickup)) {
-      showError("pickup", "Enter a pickup location using plain text (up to 160 characters)");
+    if (!values.pickup) {
+      showError("pickup", "Please enter a pickup location");
       valid = false;
     }
-    if (!values.message || values.message.length > 3000 || hasUnsafeText(values.message)) {
-      showError("message", "Enter a message using plain text (up to 3,000 characters)");
-      valid = false;
-    }
-    if (values.website) {
-      showStatus("Please review the form and try again.", true);
+    if (!values.message) {
+      showError("message", "Please enter a message");
       valid = false;
     }
     if (!valid) {
@@ -582,39 +514,40 @@ function setupForm() {
       return;
     }
 
-    if (isStaticPreview) {
+    data.set("name", values.name);
+    data.set("phone", normalizedPhone);
+    data.set("email", values.email);
+    data.set("message", values.message);
+    data.set("pickup", values.pickup);
+
+    if (window.location.protocol === "file:") {
       showStatus(
-        "Form check passed. This preview did not send your enquiry. Run with Vercel Dev to submit it securely.",
-        false
+        "This page is open as a local file. Open the website from its deployed URL or a local web server to submit the enquiry.",
+        true
       );
       return;
     }
 
+    const submitButton = form.querySelector("button[type='submit']");
     const originalButtonText = submitButton.textContent;
     isSubmitting = true;
     submitButton.disabled = true;
     submitButton.textContent = "Sending...";
 
+    const submittedAtValue = new Date().toISOString();
+    const submittedAt = form.elements.namedItem("submitted_at");
+    if (submittedAt instanceof HTMLInputElement) {
+      submittedAt.value = submittedAtValue;
+    }
+    data.set("submitted_at", submittedAtValue);
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+    const timeoutId = window.setTimeout(() => controller.abort(), 30000);
 
     try {
       const response = await fetch(form.action, {
         method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({
-          name: values.name,
-          phone: normalizedPhone,
-          email: values.email,
-          service: values.service,
-          car: values.car,
-          date: values.date,
-          passengers: values.passengers,
-          pickup: values.pickup,
-          message: values.message,
-          website: values.website,
-        }),
+        headers: { Accept: "application/json" },
+        body: data,
         signal: controller.signal,
       });
       let result;
@@ -632,7 +565,7 @@ function setupForm() {
         throw new Error(
           apiMessage
             ? apiMessage
-            : "We couldn't send your enquiry. Please try again shortly."
+            : "Web3Forms couldn't send your enquiry. Please check the access key and try again."
         );
       }
 
@@ -640,9 +573,9 @@ function setupForm() {
       form.reset();
     } catch (error) {
       const message = error instanceof Error && error.name === "AbortError"
-        ? "The enquiry service did not respond. Please wait briefly before retrying."
+        ? "Web3Forms did not respond within 30 seconds. Delivery is unconfirmed; check your inbox before retrying to avoid sending a duplicate enquiry."
         : error instanceof TypeError
-          ? "We couldn't connect. Check your connection and try again."
+          ? "We couldn't connect to Web3Forms. Check your internet connection, VPN, or firewall. Delivery is unconfirmed; check your inbox before retrying."
           : error instanceof Error
             ? error.message
             : "We couldn't send your enquiry. Please try again.";

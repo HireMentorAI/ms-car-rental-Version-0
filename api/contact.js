@@ -1,7 +1,8 @@
 const { createHash } = require("node:crypto");
-const { isIP } = require("node:net");
 
 const WEB3FORMS_URL = "https://api.web3forms.com/submit";
+const RATE_LIMIT = 5;
+const RATE_WINDOW_SECONDS = 900;
 const TOURISM_SERVICES = [
   "Jain Tirth Yatra",
   "Ashtavinayak Darshan",
@@ -11,285 +12,223 @@ const TOURISM_SERVICES = [
   "Corporate Travel",
   "Custom Itinerary Planning",
 ];
-const CARS = [
-  "Innova Crysta",
-  "Swift",
-  "Aura",
-  "Ciaz",
-  "Force Urbania",
-  "Tempo Traveller",
-  "Mini Bus",
-  "45 Seater Bus",
-  "Other",
-];
-const SAFE_ERROR = "We couldn't send your enquiry. Please review the form and try again.";
-const RATE_LIMIT_MAX = 5;
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const DUPLICATE_WINDOW_MS = 2 * 60 * 1000;
-const rateWindows = new Map();
-const duplicateWindows = new Map();
-const lastSecurityLogAt = new Map();
-const lastMapPruneAt = new WeakMap();
+const RATE_LIMIT_SCRIPT =
+  "local count=redis.call('INCR',KEYS[1]); if count==1 then redis.call('EXPIRE',KEYS[1],ARGV[1]); end; return count";
 
 module.exports.config = {
-  api: { bodyParser: { sizeLimit: "10kb" } },
+  api: {
+    bodyParser: {
+      sizeLimit: "10kb",
+    },
+  },
 };
 
 function respond(res, status, body) {
-  res.setHeader("Cache-Control", "no-store");
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  return res.status(status).json(body);
+  res.status(status).json(body);
 }
 
-function logSecurityEvent(event, req) {
-  if (lastSecurityLogAt.has(event) && Date.now() - lastSecurityLogAt.get(event) < 60000) return;
-  lastSecurityLogAt.set(event, Date.now());
-  const requestId = req?.headers?.["x-vercel-id"];
-  const record = { event, at: new Date().toISOString() };
-  if (typeof requestId === "string" && /^[A-Za-z0-9:-]{1,128}$/.test(requestId)) {
-    record.requestId = requestId;
-  }
-  console.warn(JSON.stringify(record));
+function getText(value, maxLength) {
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  return text.length <= maxLength ? text : null;
 }
 
-function pruneExpired(map, now) {
-  if (now - (lastMapPruneAt.get(map) || 0) < 60000 && map.size < 10000) return;
-  lastMapPruneAt.set(map, now);
-  for (const [key, value] of map) {
-    if (value.expiresAt <= now) map.delete(key);
-  }
-  while (map.size > 10000) map.delete(map.keys().next().value);
+function isValidName(value) {
+  return value.length >= 2 &&
+    value.length <= 80 &&
+    /^\p{L}+(?:(?:[ '-]\p{L}+)|(?:\.\s?\p{L}+))*(?:\.)?$/u.test(value);
 }
 
-function hasQueryParameters(req) {
-  try {
-    return new URL(req.url || "/", "https://local.invalid").searchParams.size > 0;
-  } catch {
-    return true;
-  }
+function normalizeIndianPhone(value) {
+  if (!/^(?:\+91[\s-]?)?[6-9](?:[\s-]?\d){9}$/.test(value)) return null;
+
+  const digits = value.replace(/[\s-]/g, "").replace(/^\+91/, "");
+  return /^[6-9]\d{9}$/.test(digits) ? `+91${digits}` : null;
 }
 
-function isSameOrigin(req) {
+function isValidEmail(value) {
+  if (!value) return true;
+  const localPart = value.split("@")[0];
+  return value.length <= 254 &&
+    localPart.length <= 64 &&
+    /^(?!.*\.\.)[A-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,63}$/i.test(value);
+}
+
+function isValidDate(value) {
+  if (!value) return true;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day;
+}
+
+function getValidatedOrigin(req) {
   const origin = req.headers.origin;
   const host = req.headers.host;
   if (typeof origin !== "string" || typeof host !== "string") return false;
+
   try {
-    const url = new URL(origin);
-    const localHttp = process.env.NODE_ENV !== "production" &&
-      url.protocol === "http:" && /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(url.host);
-    return url.host === host && (url.protocol === "https:" || localHttp);
+    const parsedOrigin = new URL(origin);
+    return parsedOrigin.host === host &&
+      (parsedOrigin.protocol === "https:" ||
+        (parsedOrigin.protocol === "http:" && /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)));
   } catch {
     return false;
   }
 }
 
-function getText(value, maximum, optional = false) {
-  if (optional && (value === undefined || value === null)) return "";
-  if (typeof value !== "string") return null;
-  const text = value.trim();
-  if (optional && text === "") return "";
-  if (!text || text.length > maximum) return null;
-  return text;
-}
+async function isRateLimited(req) {
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const clientIp = req.headers["x-real-ip"];
 
-const NAME_PATTERN = /^\p{L}[\p{L}\p{M}]*(?:(?:[ '\u2019-]\p{L}[\p{L}\p{M}]*)|(?:\.\s?\p{L}[\p{L}\p{M}]*))*\.?$/u;
-const EMAIL_PATTERN = /^(?!.*\.\.)[A-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,63}$/i;
-const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
-
-function normalizePhone(value) {
-  if (!value || !/^[+0-9\s().-]+$/.test(value)) return null;
-  let compact = value.replace(/[\s().-]/g, "");
-  if (compact.startsWith("00")) compact = `+${compact.slice(2)}`;
-  if (compact.startsWith("+")) return /^\+[1-9]\d{7,14}$/.test(compact) ? compact : null;
-  if (/^[6-9]\d{9}$/.test(compact)) return `+91${compact}`;
-  if (/^0[6-9]\d{9}$/.test(compact)) return `+91${compact.slice(1)}`;
-  return null;
-}
-
-function todayInIndia() {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
-  const fields = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
-  return `${fields.year}-${fields.month}-${fields.day}`;
-}
-
-function isValidDate(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const [year, month, day] = value.split("-").map(Number);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  return parsed.getUTCFullYear() === year &&
-    parsed.getUTCMonth() === month - 1 &&
-    parsed.getUTCDate() === day &&
-    value >= todayInIndia();
-}
-
-function containsMarkup(value) {
-  return /[<>]/.test(value) || CONTROL_CHARS.test(value);
-}
-
-function getClientIp(req) {
-  const value = req.headers["x-real-ip"] ||
-    (process.env.NODE_ENV !== "production" ? req.socket?.remoteAddress : "");
-  return typeof value === "string" && value.length <= 64 && isIP(value.trim()) ? value.trim() : "";
-}
-
-function digest(value) {
-  return createHash("sha256").update(value).digest("hex");
-}
-
-function enforceRateLimit(req) {
-  const ip = getClientIp(req);
-  if (!ip) return null;
-  const now = Date.now();
-  pruneExpired(rateWindows, now);
-  const key = digest(ip);
-  const current = rateWindows.get(key);
-  if (!current || current.expiresAt <= now) {
-    rateWindows.set(key, { count: 1, expiresAt: now + RATE_LIMIT_WINDOW_MS });
-    return true;
+  if (!redisUrl || !redisToken || typeof clientIp !== "string" || !clientIp.trim()) {
+    throw new Error("Rate limiting is not configured");
   }
-  if (current.count >= RATE_LIMIT_MAX) return false;
-  current.count += 1;
-  return true;
+
+  const parsedRedisUrl = new URL(redisUrl);
+  if (parsedRedisUrl.protocol !== "https:") {
+    throw new Error("Rate limiting URL must use HTTPS");
+  }
+
+  const ipHash = createHash("sha256").update(clientIp.trim()).digest("hex");
+  const redisResponse = await fetch(parsedRedisUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${redisToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify([
+      "EVAL",
+      RATE_LIMIT_SCRIPT,
+      "1",
+      `contact:rate:${ipHash}`,
+      String(RATE_WINDOW_SECONDS),
+    ]),
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!redisResponse.ok) throw new Error("Rate limit service request failed");
+
+  const result = await redisResponse.json();
+  if (!Number.isInteger(result.result)) {
+    throw new Error("Rate limit service returned an invalid response");
+  }
+  return result.result > RATE_LIMIT;
 }
 
-function reserveDuplicateWindow(values) {
-  const now = Date.now();
-  pruneExpired(duplicateWindows, now);
-  const fingerprint = digest(JSON.stringify([
-    values.name, values.phone, values.email, values.service, values.car,
-    values.date, values.passengers, values.pickup, values.message,
-  ]));
-  const existing = duplicateWindows.get(fingerprint);
-  if (existing && existing.expiresAt > now) return false;
-  duplicateWindows.set(fingerprint, { expiresAt: now + DUPLICATE_WINDOW_MS });
-  return true;
-}
-
-async function handleContact(req, res) {
+module.exports = async function contact(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return respond(res, 405, { error: "Method not allowed." });
   }
-  if (hasQueryParameters(req)) return respond(res, 400, { error: "Please submit the form again." });
-  if (!/^application\/json(?:\s*;|$)/i.test(req.headers["content-type"] || "")) {
-    return respond(res, 415, { error: "Please submit the form again." });
+  if (!getValidatedOrigin(req)) {
+    return respond(res, 403, { error: "Request origin is not allowed." });
   }
-  if (!isSameOrigin(req)) {
-    logSecurityEvent("contact_origin_rejected", req);
-    return respond(res, 403, { error: "This form submission is not allowed." });
-  }
-
-  const rateAllowed = enforceRateLimit(req);
-  if (rateAllowed === null) {
-    logSecurityEvent("contact_client_ip_unavailable", req);
-    return respond(res, 503, { error: "Enquiry submission is temporarily unavailable." });
-  }
-  if (!rateAllowed) {
-    logSecurityEvent("contact_rate_limited", req);
-    return respond(res, 429, { error: "Too many enquiries. Please wait before trying again." });
+  if (!req.body || typeof req.body !== "object" || Array.isArray(req.body)) {
+    return respond(res, 400, { error: "Please submit a valid enquiry." });
   }
 
   const input = req.body;
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
-    return respond(res, 400, { error: SAFE_ERROR });
+  if (typeof input.website === "string" && input.website.trim()) {
+    return respond(res, 400, { error: "Please submit a valid enquiry." });
   }
-  const allowedFields = new Set([
-    "name", "phone", "email", "service", "car", "date", "passengers",
-    "pickup", "message", "website",
-  ]);
-  if (Object.keys(input).some((key) => !allowedFields.has(key))) {
-    return respond(res, 400, { error: SAFE_ERROR });
-  }
-  if (input.website !== undefined &&
-      (typeof input.website !== "string" || input.website.trim())) {
-    return respond(res, 400, { error: SAFE_ERROR });
+  if (input.botcheck) {
+    return respond(res, 400, { error: "Please submit a valid enquiry." });
   }
 
   const name = getText(input.name, 80);
-  const phoneText = getText(input.phone, 40);
-  const phone = phoneText === null ? null : normalizePhone(phoneText);
-  const email = getText(input.email, 254, true);
+  const email = getText(input.email, 254);
+  const phoneInput = getText(input.phone, 40);
+  const phone = phoneInput === null ? null : normalizeIndianPhone(phoneInput);
   const service = getText(input.service, 80);
   const car = getText(input.car, 80);
   const date = getText(input.date, 10);
   const passengers = getText(input.passengers, 3);
   const pickup = getText(input.pickup, 160);
   const message = getText(input.message, 3000);
-  const max = Number(process.env.MAX_PASSENGERS);
-  const maxPassengers = Number.isInteger(max) && max >= 1 && max <= 100 ? max : 40;
 
-  if (!name || name.length < 2 || !NAME_PATTERN.test(name) ||
-      !phone || email === null || (email && (email.split("@")[0].length > 64 || !EMAIL_PATTERN.test(email))) ||
-      !TOURISM_SERVICES.includes(service) || !CARS.includes(car) ||
-      !date || !isValidDate(date) || passengers === null ||
-      !/^\d{1,3}$/.test(passengers) || Number(passengers) < 1 ||
-      Number(passengers) > maxPassengers || !pickup || containsMarkup(pickup) ||
-      !message || containsMarkup(message)) {
-    return respond(res, 400, { error: SAFE_ERROR });
+  if (
+    !name ||
+    !isValidName(name) ||
+    !email ||
+    !isValidEmail(email) ||
+    !phone ||
+    !TOURISM_SERVICES.includes(service) ||
+    !pickup ||
+    !message ||
+    !car ||
+    !date ||
+    passengers === null ||
+    !isValidDate(date) ||
+    !/^\d{1,3}$/.test(passengers) ||
+    Number(passengers) < 1 ||
+    Number(passengers) > 40
+  ) {
+    return respond(res, 400, { error: "Please check the required fields and try again." });
   }
 
-  if (!process.env.WEB3FORMS_ACCESS_KEY?.trim()) {
-    logSecurityEvent("contact_provider_configuration_missing", req);
-    return respond(res, 503, { error: "Enquiry submission is temporarily unavailable." });
+  const accessKey = process.env.WEB3FORMS_ACCESS_KEY;
+  if (!accessKey) {
+    return respond(res, 503, {
+      error: "Email enquiries are not configured. The site owner must set WEB3FORMS_ACCESS_KEY after obtaining a key at https://web3forms.com/.",
+    });
+  }
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return respond(res, 503, {
+      error: "The enquiry rate limiter is not configured. The site owner must set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
+    });
   }
 
-  const values = { name, phone, email, service, car, date, passengers, pickup, message };
-  if (!reserveDuplicateWindow(values)) {
-    logSecurityEvent("contact_duplicate_rejected", req);
-    return respond(res, 409, { error: "This enquiry was just submitted. Please wait before retrying." });
+  let rateLimited;
+  try {
+    rateLimited = await isRateLimited(req);
+  } catch {
+    return respond(res, 503, {
+      error: "The enquiry rate limiter is unavailable. Please try again later or contact the site owner.",
+    });
+  }
+  if (rateLimited) {
+    return respond(res, 429, { error: "Too many enquiries. Please try again later." });
   }
 
   try {
-    const formData = {
-      access_key: process.env.WEB3FORMS_ACCESS_KEY,
-      subject: "New Tourism Enquiry - CSN AI",
-      form_name: "CSN AI Tourism Enquiry",
-      name,
-      phone,
-      service,
-      car_required: car,
-      travel_date: date,
-      passengers,
-      pickup_location: pickup,
-      message,
-    };
-    if (email) formData.email = email;
     const providerResponse = await fetch(WEB3FORMS_URL, {
       method: "POST",
       headers: {
         Accept: "application/json",
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "Content-Type": "application/json",
       },
-      body: new URLSearchParams(formData),
+      body: JSON.stringify({
+        access_key: accessKey,
+        subject: "New car rental enquiry",
+        form_name: "Car Rental Enquiry",
+        page: "Contact & Enquiry section",
+        submitted_at: new Date().toISOString(),
+        name,
+        email,
+        phone,
+        service,
+        car,
+        date,
+        passengers,
+        pickup,
+        message,
+        botcheck: "",
+      }),
       signal: AbortSignal.timeout(10000),
     });
-    let providerResult;
-    try {
-      providerResult = await providerResponse.json();
-    } catch {
-      providerResult = null;
+    if (!providerResponse.ok) {
+      return respond(res, 502, { error: "We couldn't send your enquiry. Please try again." });
     }
-    if (!providerResponse.ok || providerResult?.success !== true) {
-      logSecurityEvent("contact_provider_rejected", req);
-      return respond(res, 502, { error: "We couldn't send your enquiry. Please try again shortly." });
+
+    const providerResult = await providerResponse.json();
+    if (providerResult.success !== true) {
+      return respond(res, 502, { error: "We couldn't send your enquiry. Please try again." });
     }
     return respond(res, 200, { success: true });
   } catch {
-    logSecurityEvent("contact_provider_unavailable", req);
-    return respond(res, 502, { error: "We couldn't send your enquiry. Please try again shortly." });
-  }
-}
-
-module.exports = async function contact(req, res) {
-  try {
-    return await handleContact(req, res);
-  } catch {
-    logSecurityEvent("contact_unhandled_error", req);
-    return respond(res, 500, { error: "Enquiry submission is temporarily unavailable." });
+    return respond(res, 502, { error: "We couldn't send your enquiry. Please try again." });
   }
 };

@@ -122,11 +122,6 @@ button {
 .btn-block {
   width: 100%;
 }
-.btn:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-  transform: none;
-}
 
 /* ============================================================
    TOP BAR
