@@ -50,29 +50,19 @@ Everything on the page updates automatically — no need to touch `index.html`.
 ## ✉️ Contact Enquiry Setup
 
 The form sends JSON to the same-origin `/api/contact` route. The server validates
-all fields, accepts an optional email, enforces the configured passenger cap,
-rejects past or malformed dates and markup, checks service/car allowlists,
-verifies Cloudflare Turnstile, applies an Upstash per-IP rate limit, and
-deduplicates matching submissions for two minutes. The contact endpoint allows
-five submissions per IP per 15 minutes; the public form-config endpoint has its
-own 60 requests per IP per minute limit. Both endpoints are same-origin only,
-reject unexpected query parameters, and return non-cacheable responses. Structured
-security events are written to Vercel function logs with event names and request
-IDs only; rate counters and duplicate fingerprints do not contain raw IPs or
-enquiry details. It forwards only the
-necessary enquiry fields to Web3Forms and does not save customer data in this
-project. A public `/api/form-config` route returns only the Turnstile site key
-and passenger limit; secret values are never returned to the browser.
+all fields, enforces the passenger cap, rejects past dates and markup, checks
+service and car allowlists, applies a five-per-IP request limit per 15 minutes,
+and rejects duplicate enquiries for two minutes. It also uses same-origin checks
+and a honeypot field. The rate limit and duplicate window are held in each warm
+serverless instance, so they are best-effort and less robust than a shared store.
+Security logs contain event names and request IDs only. Enquiry data is forwarded
+to Web3Forms and is not saved by this project.
 
-Configure every variable in `.env.example` in Vercel. Create a Cloudflare
-Turnstile widget for the production hostname and set its site and secret keys.
-Set `ALLOWED_ORIGINS` to the exact comma-separated HTTPS origins permitted to
-submit, and create a random `ENQUIRY_HASH_SECRET` of at least 32 characters.
-The form fails closed if required protections are not configured. `MAX_PASSENGERS`
-defaults to 40 (allowed configuration range 1–100); rate limiting defaults to
-five submissions per IP per 15 minutes. For local development, add the exact
-localhost origin to `ALLOWED_ORIGINS` and use separate development credentials
-and a Turnstile test widget/key.
+Only `WEB3FORMS_ACCESS_KEY` is required for delivery. Keep it in `.env.local` for
+local development and in Vercel Project Settings for production; never place it
+in browser code. `MAX_PASSENGERS` is optional and defaults to 40 (allowed range
+1–100). Same-origin checks are based on the request host, so no origin allowlist
+or CAPTCHA provider configuration is needed.
 
 ## 🚀 Run Locally
 
@@ -94,13 +84,9 @@ Open the local URL printed by `vercel dev` (usually
 Vercel before pulling them. Alternatively, create `.env.local` from
 `.env.example` and enter the values there. `.env.local` is ignored by Git.
 
-Local form operation requires working Web3Forms and Upstash development
-credentials, Turnstile test site/secret keys, and an `ENQUIRY_HASH_SECRET` of
-at least 32 random characters. Set `ALLOWED_ORIGINS` to the exact local origin,
-for example `http://localhost:3000` (and the `127.0.0.1` origin only if you
-will use it). Do not use production credentials for local testing when
-separate development credentials are available. The API intentionally fails
-closed if required security services are missing or unavailable.
+Local delivery requires a working Web3Forms key in `.env.local`. You can copy
+`.env.example` to `.env.local` and add the key, or pull your Vercel Development
+variables after linking the project. The file is ignored by Git.
 
 ## ☁️ Deploy to Vercel (Free)
 
@@ -110,12 +96,12 @@ closed if required security services are missing or unavailable.
 4. Add your custom domain in **Settings → Domains**.
 
 > No build command needed. Vercel serves `index.html` and the serverless routes
-> in `api/`. Configure all server-side environment variables before accepting
+> in `api/`. Configure `WEB3FORMS_ACCESS_KEY` before accepting
 > enquiries.
 
 This protected form requires Vercel serverless routes in `api/`. A static-only
-deployment will not include server validation, rate limiting, deduplication, or
-CAPTCHA verification and must not be used for production enquiries.
+deployment will not include server validation, same-origin checks, rate limiting,
+or duplicate checks and must not be used for production enquiries.
 
 ## 🧪 Final Checklist
 
@@ -125,7 +111,7 @@ CAPTCHA verification and must not be used for production enquiries.
 - ✅ Tourism service cards link to the enquiry form and preselect their service
 - ✅ Enquiry submissions include the selected tourism service
 - ✅ Contact form validates in the browser and serverless route
-- ✅ Contact submissions require Turnstile and Upstash protection
+- ✅ Contact submissions use server-side validation, same-origin checks, a honeypot, and best-effort rate limiting
 - ✅ Submission loading, success, and error states are accessible
 - ✅ Responsive on mobile/tablet/desktop
 - ✅ No fake claims, prices, ratings, or awards

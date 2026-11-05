@@ -1,7 +1,7 @@
-const { createHmac } = require("node:crypto");
+const { createHash } = require("node:crypto");
+const { isIP } = require("node:net");
 
 const WEB3FORMS_URL = "https://api.web3forms.com/submit";
-const TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const TOURISM_SERVICES = [
   "Jain Tirth Yatra",
   "Ashtavinayak Darshan",
@@ -23,6 +23,13 @@ const CARS = [
   "Other",
 ];
 const SAFE_ERROR = "We couldn't send your enquiry. Please review the form and try again.";
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const DUPLICATE_WINDOW_MS = 2 * 60 * 1000;
+const rateWindows = new Map();
+const duplicateWindows = new Map();
+const lastSecurityLogAt = new Map();
+const lastMapPruneAt = new WeakMap();
 
 module.exports.config = {
   api: { bodyParser: { sizeLimit: "10kb" } },
@@ -45,7 +52,14 @@ function logSecurityEvent(event, req) {
   console.warn(JSON.stringify(record));
 }
 
-const lastSecurityLogAt = new Map();
+function pruneExpired(map, now) {
+  if (now - (lastMapPruneAt.get(map) || 0) < 60000 && map.size < 10000) return;
+  lastMapPruneAt.set(map, now);
+  for (const [key, value] of map) {
+    if (value.expiresAt <= now) map.delete(key);
+  }
+  while (map.size > 10000) map.delete(map.keys().next().value);
+}
 
 function hasQueryParameters(req) {
   try {
@@ -55,29 +69,18 @@ function hasQueryParameters(req) {
   }
 }
 
-function getLimit(name, fallback, maximum) {
-  const value = Number(process.env[name]);
-  return Number.isInteger(value) && value >= 1 && value <= maximum ? value : fallback;
-}
-
-function getAllowedOrigins() {
-  return (process.env.ALLOWED_ORIGINS || "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean)
-    .map((value) => {
-      try {
-        const url = new URL(value);
-        return url.protocol === "https:" ||
-          (process.env.NODE_ENV !== "production" && url.protocol === "http:" &&
-            /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(url.host))
-          ? url.origin
-          : null;
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean);
+function isSameOrigin(req) {
+  const origin = req.headers.origin;
+  const host = req.headers.host;
+  if (typeof origin !== "string" || typeof host !== "string") return false;
+  try {
+    const url = new URL(origin);
+    const localHttp = process.env.NODE_ENV !== "production" &&
+      url.protocol === "http:" && /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(url.host);
+    return url.host === host && (url.protocol === "https:" || localHttp);
+  } catch {
+    return false;
+  }
 }
 
 function getText(value, maximum, optional = false) {
@@ -97,9 +100,7 @@ function normalizePhone(value) {
   if (!value || !/^[+0-9\s().-]+$/.test(value)) return null;
   let compact = value.replace(/[\s().-]/g, "");
   if (compact.startsWith("00")) compact = `+${compact.slice(2)}`;
-  if (compact.startsWith("+")) {
-    return /^\+[1-9]\d{7,14}$/.test(compact) ? compact : null;
-  }
+  if (compact.startsWith("+")) return /^\+[1-9]\d{7,14}$/.test(compact) ? compact : null;
   if (/^[6-9]\d{9}$/.test(compact)) return `+91${compact}`;
   if (/^0[6-9]\d{9}$/.test(compact)) return `+91${compact.slice(1)}`;
   return null;
@@ -133,88 +134,40 @@ function containsMarkup(value) {
 function getClientIp(req) {
   const value = req.headers["x-real-ip"] ||
     (process.env.NODE_ENV !== "production" ? req.socket?.remoteAddress : "");
-  return typeof value === "string" && value.length <= 64 ? value.trim() : "";
+  return typeof value === "string" && value.length <= 64 && isIP(value.trim()) ? value.trim() : "";
 }
 
 function digest(value) {
-  return createHmac("sha256", process.env.ENQUIRY_HASH_SECRET).update(value).digest("hex");
+  return createHash("sha256").update(value).digest("hex");
 }
 
-async function redisCommand(args) {
-  const url = new URL(process.env.UPSTASH_REDIS_REST_URL || "");
-  if (url.protocol !== "https:" || !url.hostname.endsWith(".upstash.io") || url.username || url.password) {
-    throw new Error("Rate limit service configuration is invalid");
+function enforceRateLimit(req) {
+  const ip = getClientIp(req);
+  if (!ip) return null;
+  const now = Date.now();
+  pruneExpired(rateWindows, now);
+  const key = digest(ip);
+  const current = rateWindows.get(key);
+  if (!current || current.expiresAt <= now) {
+    rateWindows.set(key, { count: 1, expiresAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
   }
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(args),
-    signal: AbortSignal.timeout(5000),
-  });
-  if (!response.ok) throw new Error("Rate limit service request failed");
-  const body = await response.json();
-  if (body.error) throw new Error("Rate limit service request failed");
-  return body.result;
+  if (current.count >= RATE_LIMIT_MAX) return false;
+  current.count += 1;
+  return true;
 }
 
-async function enforceRateLimit(req) {
-  const ip = getClientIp(req);
-  if (!ip) throw new Error("Client address is unavailable");
-  const max = getLimit("RATE_LIMIT_MAX", 5, 100);
-  const windowSeconds = getLimit("RATE_LIMIT_WINDOW_SECONDS", 900, 86400);
-  const key = `contact:rate:${digest(ip)}`;
-  const script = "local n=redis.call('INCR',KEYS[1]); if n==1 then redis.call('EXPIRE',KEYS[1],ARGV[1]); end; return n";
-  const count = await redisCommand(["EVAL", script, "1", key, String(windowSeconds)]);
-  if (!Number.isInteger(count)) throw new Error("Rate limit response is invalid");
-  return count <= max;
-}
-
-async function reserveDuplicateWindow(values) {
+function reserveDuplicateWindow(values) {
+  const now = Date.now();
+  pruneExpired(duplicateWindows, now);
   const fingerprint = digest(JSON.stringify([
-    values.name,
-    values.phone,
-    values.email,
-    values.service,
-    values.car,
-    values.date,
-    values.passengers,
-    values.pickup,
-    values.message,
+    values.name, values.phone, values.email, values.service, values.car,
+    values.date, values.passengers, values.pickup, values.message,
   ]));
-  const result = await redisCommand([
-    "SET",
-    `contact:dedupe:${fingerprint}`,
-    "1",
-    "EX",
-    "120",
-    "NX",
-  ]);
-  return result === "OK";
-}
-
-async function verifyTurnstile(token, req, allowedOrigins) {
-  const values = new URLSearchParams({
-    secret: process.env.TURNSTILE_SECRET_KEY,
-    response: token,
-  });
-  const ip = getClientIp(req);
-  if (ip) values.set("remoteip", ip);
-
-  const response = await fetch(TURNSTILE_VERIFY_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: values,
-    signal: AbortSignal.timeout(5000),
-  });
-  if (!response.ok) return false;
-  const result = await response.json();
-  const allowedHosts = new Set(allowedOrigins.map((origin) => new URL(origin).hostname));
-  return result.success === true &&
-    typeof result.hostname === "string" &&
-    allowedHosts.has(result.hostname);
+  const existing = duplicateWindows.get(fingerprint);
+  if (existing && existing.expiresAt > now) return false;
+  duplicateWindows.set(fingerprint, { expiresAt: now + DUPLICATE_WINDOW_MS });
+  return true;
 }
 
 async function handleContact(req, res) {
@@ -222,19 +175,23 @@ async function handleContact(req, res) {
     res.setHeader("Allow", "POST");
     return respond(res, 405, { error: "Method not allowed." });
   }
-  if (hasQueryParameters(req)) {
-    return respond(res, 400, { error: "Please submit the form again." });
-  }
+  if (hasQueryParameters(req)) return respond(res, 400, { error: "Please submit the form again." });
   if (!/^application\/json(?:\s*;|$)/i.test(req.headers["content-type"] || "")) {
     return respond(res, 415, { error: "Please submit the form again." });
   }
-
-  const allowedOrigins = getAllowedOrigins();
-  const origin = req.headers.origin;
-  if (!allowedOrigins.length || typeof origin !== "string" ||
-      !allowedOrigins.includes(origin) || new URL(origin).host !== req.headers.host) {
-    if (Math.random() < 0.05) logSecurityEvent("contact_origin_rejected", req);
+  if (!isSameOrigin(req)) {
+    logSecurityEvent("contact_origin_rejected", req);
     return respond(res, 403, { error: "This form submission is not allowed." });
+  }
+
+  const rateAllowed = enforceRateLimit(req);
+  if (rateAllowed === null) {
+    logSecurityEvent("contact_client_ip_unavailable", req);
+    return respond(res, 503, { error: "Enquiry submission is temporarily unavailable." });
+  }
+  if (!rateAllowed) {
+    logSecurityEvent("contact_rate_limited", req);
+    return respond(res, 429, { error: "Too many enquiries. Please wait before trying again." });
   }
 
   const input = req.body;
@@ -243,7 +200,7 @@ async function handleContact(req, res) {
   }
   const allowedFields = new Set([
     "name", "phone", "email", "service", "car", "date", "passengers",
-    "pickup", "message", "turnstileToken", "website",
+    "pickup", "message", "website",
   ]);
   if (Object.keys(input).some((key) => !allowedFields.has(key))) {
     return respond(res, 400, { error: SAFE_ERROR });
@@ -263,60 +220,28 @@ async function handleContact(req, res) {
   const passengers = getText(input.passengers, 3);
   const pickup = getText(input.pickup, 160);
   const message = getText(input.message, 3000);
-  const maxPassengers = getLimit("MAX_PASSENGERS", 40, 100);
+  const max = Number(process.env.MAX_PASSENGERS);
+  const maxPassengers = Number.isInteger(max) && max >= 1 && max <= 100 ? max : 40;
 
   if (!name || name.length < 2 || !NAME_PATTERN.test(name) ||
-      !phone || email === null || (email && (email.length > 254 ||
-        email.split("@")[0].length > 64 || !EMAIL_PATTERN.test(email))) ||
+      !phone || email === null || (email && (email.split("@")[0].length > 64 || !EMAIL_PATTERN.test(email))) ||
       !TOURISM_SERVICES.includes(service) || !CARS.includes(car) ||
       !date || !isValidDate(date) || passengers === null ||
       !/^\d{1,3}$/.test(passengers) || Number(passengers) < 1 ||
       Number(passengers) > maxPassengers || !pickup || containsMarkup(pickup) ||
-      !message || containsMarkup(message) || !input.turnstileToken ||
-      typeof input.turnstileToken !== "string" || input.turnstileToken.length > 2048) {
+      !message || containsMarkup(message)) {
     return respond(res, 400, { error: SAFE_ERROR });
   }
 
-  const requiredConfig = [
-    process.env.WEB3FORMS_ACCESS_KEY,
-    process.env.UPSTASH_REDIS_REST_URL,
-    process.env.UPSTASH_REDIS_REST_TOKEN,
-    process.env.TURNSTILE_SECRET_KEY,
-    process.env.ENQUIRY_HASH_SECRET,
-  ];
-  if (requiredConfig.some((value) => !value) || process.env.ENQUIRY_HASH_SECRET.length < 32) {
-    return respond(res, 503, { error: "Secure enquiry submission is temporarily unavailable." });
-  }
-
-  try {
-    if (!await enforceRateLimit(req)) {
-      logSecurityEvent("contact_rate_limited", req);
-      return respond(res, 429, { error: "Too many enquiries. Please wait before trying again." });
-    }
-  } catch {
-    logSecurityEvent("contact_rate_limit_unavailable", req);
-    return respond(res, 503, { error: "Secure enquiry submission is temporarily unavailable." });
-  }
-
-  try {
-    if (!await verifyTurnstile(input.turnstileToken, req, allowedOrigins)) {
-      logSecurityEvent("contact_turnstile_rejected", req);
-      return respond(res, 400, { error: "Security verification expired. Please complete it again." });
-    }
-  } catch {
-    logSecurityEvent("contact_turnstile_unavailable", req);
-    return respond(res, 503, { error: "Security verification is temporarily unavailable. Please try again." });
+  if (!process.env.WEB3FORMS_ACCESS_KEY?.trim()) {
+    logSecurityEvent("contact_provider_configuration_missing", req);
+    return respond(res, 503, { error: "Enquiry submission is temporarily unavailable." });
   }
 
   const values = { name, phone, email, service, car, date, passengers, pickup, message };
-  try {
-    if (!await reserveDuplicateWindow(values)) {
-      logSecurityEvent("contact_duplicate_rejected", req);
-      return respond(res, 409, { error: "This enquiry was just submitted. Please wait a moment before retrying." });
-    }
-  } catch {
-    logSecurityEvent("contact_deduplication_unavailable", req);
-    return respond(res, 503, { error: "Secure enquiry submission is temporarily unavailable." });
+  if (!reserveDuplicateWindow(values)) {
+    logSecurityEvent("contact_duplicate_rejected", req);
+    return respond(res, 409, { error: "This enquiry was just submitted. Please wait before retrying." });
   }
 
   try {
@@ -340,12 +265,7 @@ async function handleContact(req, res) {
       body: JSON.stringify(formData),
       signal: AbortSignal.timeout(10000),
     });
-    if (!providerResponse.ok) {
-      logSecurityEvent("contact_provider_rejected", req);
-      return respond(res, 502, { error: "We couldn't send your enquiry. Please try again shortly." });
-    }
-    const providerResult = await providerResponse.json();
-    if (providerResult.success !== true) {
+    if (!providerResponse.ok || (await providerResponse.json()).success !== true) {
       logSecurityEvent("contact_provider_rejected", req);
       return respond(res, 502, { error: "We couldn't send your enquiry. Please try again shortly." });
     }
@@ -361,6 +281,6 @@ module.exports = async function contact(req, res) {
     return await handleContact(req, res);
   } catch {
     logSecurityEvent("contact_unhandled_error", req);
-    return respond(res, 500, { error: "Secure enquiry submission is temporarily unavailable." });
+    return respond(res, 500, { error: "Enquiry submission is temporarily unavailable." });
   }
 };

@@ -294,7 +294,6 @@
             <div class="form-status" id="formStatus" role="status" aria-live="polite" aria-atomic="true"></div>
 
             <form id="enquiryForm" action="/api/contact" method="POST" novalidate>
-              <input type="hidden" name="turnstileToken" id="turnstileToken" />
               <input type="text" name="website" class="honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" />
               <div class="form-grid">
                 <div class="form-group">
@@ -357,8 +356,7 @@
                 </div>
               </div>
 
-              <div id="turnstileWidget" class="turnstile-widget" aria-label="Security verification"></div>
-              <button type="submit" class="btn btn-primary btn-block" disabled>Send Enquiry</button>
+              <button type="submit" class="btn btn-primary btn-block">Send Enquiry</button>
             </form>
           </div>
         </div>

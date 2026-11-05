@@ -459,7 +459,6 @@ function setupForm() {
   };
 
   const submitButton = form.querySelector("button[type='submit']");
-  const tokenInput = form.elements.namedItem("turnstileToken");
   const dateInput = form.elements.namedItem("date");
   const passengerInput = form.elements.namedItem("passengers");
   const isStaticPreview = window.location.protocol === "file:";
@@ -483,9 +482,6 @@ function setupForm() {
       });
       if (!configResponse.ok) throw new Error("Form security configuration unavailable");
       const config = await configResponse.json();
-      if (typeof config.siteKey !== "string" || !/^[A-Za-z0-9_-]{20,}$/.test(config.siteKey)) {
-        throw new Error("Form security configuration unavailable");
-      }
       const configuredLimit = Number(config.maxPassengers);
       if (Number.isInteger(configuredLimit) && configuredLimit >= 1 && configuredLimit <= 100) {
         MAX_PASSENGERS = configuredLimit;
@@ -495,44 +491,11 @@ function setupForm() {
         MIN_TRAVEL_DATE = config.today;
         if (dateInput instanceof HTMLInputElement) dateInput.min = MIN_TRAVEL_DATE;
       }
-
-      await new Promise((resolve, reject) => {
-        const turnstileScript = document.createElement("script");
-        turnstileScript.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-        turnstileScript.async = true;
-        turnstileScript.defer = true;
-        turnstileScript.onload = resolve;
-        turnstileScript.onerror = reject;
-        document.head.appendChild(turnstileScript);
-      });
-      if (!window.turnstile) throw new Error("Security check unavailable");
-
-      const mount = document.getElementById("turnstileWidget");
-      window.turnstile.render(mount, {
-        sitekey: config.siteKey,
-        callback: (token) => {
-          tokenInput.value = token;
-          submitButton.disabled = isSubmitting;
-        },
-        "expired-callback": () => {
-          tokenInput.value = "";
-          submitButton.disabled = true;
-        },
-        "error-callback": () => {
-          tokenInput.value = "";
-          submitButton.disabled = true;
-          showStatus("Security verification could not load. Please refresh and try again.", true);
-        },
-      });
+      submitButton.disabled = false;
     } catch {
-      submitButton.disabled = true;
-      const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
-      showStatus(
-        isLocal
-          ? "Local form setup is incomplete. Start the project with Vercel Dev and configure the local environment values in .env.local."
-          : "Secure enquiry submission is temporarily unavailable. Please contact us by phone or email.",
-        true
-      );
+      // The server repeats all security checks. Keep the form usable with client defaults
+      // if this optional date/passenger configuration endpoint is unavailable.
+      submitButton.disabled = false;
     }
   };
   initializeSecurityCheck();
@@ -609,10 +572,6 @@ function setupForm() {
       showError("message", "Enter a message using plain text (up to 3,000 characters)");
       valid = false;
     }
-    if (!isStaticPreview && !tokenInput.value) {
-      showStatus("Please complete the security check before sending your enquiry.", true);
-      valid = false;
-    }
     if (values.website) {
       showStatus("Please review the form and try again.", true);
       valid = false;
@@ -654,7 +613,6 @@ function setupForm() {
           passengers: values.passengers,
           pickup: values.pickup,
           message: values.message,
-          turnstileToken: tokenInput.value,
           website: values.website,
         }),
         signal: controller.signal,
@@ -695,9 +653,7 @@ function setupForm() {
     } finally {
       window.clearTimeout(timeoutId);
       isSubmitting = false;
-      tokenInput.value = "";
-      if (window.turnstile) window.turnstile.reset();
-      submitButton.disabled = true;
+      submitButton.disabled = false;
       submitButton.textContent = originalButtonText;
     }
   });
