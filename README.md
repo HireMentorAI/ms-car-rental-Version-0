@@ -49,47 +49,35 @@ Everything on the page updates automatically — no need to touch `index.html`.
 
 ## ✉️ Contact Enquiry Setup
 
-The contact form posts directly to `https://api.web3forms.com/submit` using the
-provided Web3Forms access key in a hidden form field. This is a static HTML site
-with no build-time environment-variable support, so the access key is visible in
-the browser source by design. Use only a Web3Forms form access key, never a
-private backend credential. If the key needs to be rotated, update the hidden
-`access_key` field in `index.html`.
+The contact form sends JSON to the same-origin `/api/contact` route. The server
+validates every field, checks service/car allowlists, enforces same-origin
+requests, uses a honeypot, applies a best-effort five-per-IP limit per 15 minutes,
+and rejects duplicate enquiries for two minutes. It forwards enquiries to
+Web3Forms without saving customer data in this project. The API delivery key
+stays server-side in `WEB3FORMS_ACCESS_KEY` and is never included in browser code.
 
-In Web3Forms, verify the destination email inbox for the access key before
-expecting notifications. The form includes name, phone, email, service,
-car, travel date, passenger count, pickup location, message, subject, form/page
-metadata, and a submission timestamp. The service selection includes Jain Tirth
-Yatra, Ashtavinayak Darshan, Jyotirling Darshan, Char Dham Yatra, Airport
-Transfers, Corporate Travel, and Custom Itinerary Planning. It uses the
-supported honeypot field, validates inputs, reports request/API errors, prevents
-duplicate submits, and resets only after a successful API response.
-Names must be 2–80 letters with supported name punctuation; Indian mobile
-numbers are normalized to `+91` plus 10 digits; email is required and validated;
-car, travel date, passenger count (1–40), pickup location, and message are also
-required.
+Field rules: names contain only letters and spaces (3–80 characters); phones
+contain exactly 10 digits; email is required and validated; travel date must be
+today or later; passengers must be 1–45; pickup location must be at least 3
+characters; message must be 10–500 characters. The form also requires a valid
+service and car selection.
 
-The original `/api/contact` serverless endpoint remains available for any
-separate integrations that use it; the website form no longer depends on that
-endpoint or its rate-limiter environment variables.
+The in-memory rate limit is best-effort across serverless instances. A shared
+rate-limit service or CAPTCHA can be added later if stronger bot protection is
+needed.
 
 ## 🚀 Run Locally
 
-Double-clicking `index.html` opens a static preview only; browser security
-prevents form submissions from a `file://` URL. Run a local web server or use
-the deployed website to submit enquiries.
-
-Or run a local server (optional):
+The API route must run for enquiry delivery. Double-clicking `index.html` or
+using a static-only server does not run the route.
 
 ```bash
-# Python 3
-python -m http.server 3000
-
-# Node (if installed)
-npx serve .
+npx vercel dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Set `WEB3FORMS_ACCESS_KEY` in `.env.local` (copy `.env.example` and replace the
+placeholder) or pull the Vercel Development environment after linking the
+project. `.env.local` is ignored by Git. Open the local URL printed by Vercel.
 
 ## ☁️ Deploy to Vercel (Free)
 
@@ -99,22 +87,11 @@ Open [http://localhost:3000](http://localhost:3000)
 4. Add your custom domain in **Settings → Domains**.
 
 > No build command needed. Vercel serves `index.html` directly. Verify the
-> destination email inbox in Web3Forms before relying on email submissions.
+> destination email inbox in Web3Forms before relying on email submissions. Set
+> `WEB3FORMS_ACCESS_KEY` in Vercel's Production environment and redeploy.
 
-### Deploy static files to Netlify (drag & drop)
-
-1. Go to [app.netlify.com/drop](https://app.netlify.com/drop).
-2. Drag the entire `ms-car-rental` folder onto the page.
-3. The static site can submit directly to Web3Forms; verify its recipient inbox
-   before relying on email submissions.
-
-### Deploy static files to Cloudflare Pages
-
-1. Push to GitHub.
-2. Go to **Cloudflare Pages** → **Create project** → connect repo.
-3. Leave build command blank, output directory = `/` (root).
-4. The static site can submit directly to Web3Forms; verify its recipient inbox
-   before relying on email submissions.
+This form requires the serverless route in `api/`. Static-only hosting platforms
+do not run that route and cannot deliver enquiries.
 
 ## 🧪 Final Checklist
 

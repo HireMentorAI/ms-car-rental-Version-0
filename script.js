@@ -187,15 +187,18 @@ const TOURISM_SERVICES = [
   },
 ];
 
-const NAME_PATTERN = /^\p{L}+(?:(?:[ '-]\p{L}+)|(?:\.\s?\p{L}+))*(?:\.)?$/u;
+const NAME_PATTERN = /^\p{L}+(?: +\p{L}+)*$/u;
 const EMAIL_PATTERN = /^(?!.*\.\.)[A-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,63}$/i;
 
-function normalizeIndianPhone(value) {
-  const phone = value.trim();
-  if (!/^(?:\+91[\s-]?)?[6-9](?:[\s-]?\d){9}$/.test(phone)) return null;
-
-  const digits = phone.replace(/[\s-]/g, "").replace(/^\+91/, "");
-  return /^[6-9]\d{9}$/.test(digits) ? `+91${digits}` : null;
+function todayInIndiaString() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const fields = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${fields.year}-${fields.month}-${fields.day}`;
 }
 
 /* ------------------------------------------------------------
@@ -427,6 +430,8 @@ function setupForm() {
   const status = document.getElementById("formStatus");
   if (!form || !status) return;
   let isSubmitting = false;
+  const dateInput = form.elements.namedItem("date");
+  if (dateInput instanceof HTMLInputElement) dateInput.min = todayInIndiaString();
 
   const showError = (field, msg) => {
     const el = form.querySelector(`[data-error="${field}"]`);
@@ -469,19 +474,18 @@ function setupForm() {
       showError("name", "Please enter your name");
       valid = false;
     } else if (
-      values.name.length < 2 ||
+      values.name.length < 3 ||
       values.name.length > 80 ||
       !NAME_PATTERN.test(values.name)
     ) {
-      showError("name", "Enter a valid name using 2–80 letters, spaces, periods, apostrophes, or hyphens");
+      showError("name", "Use at least 3 letters and spaces only");
       valid = false;
     }
-    const normalizedPhone = values.phone ? normalizeIndianPhone(values.phone) : null;
     if (!values.phone) {
       showError("phone", "Please enter your phone number");
       valid = false;
-    } else if (!normalizedPhone) {
-      showError("phone", "Enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9");
+    } else if (!/^\d{10}$/.test(values.phone)) {
+      showError("phone", "Enter exactly 10 digits, with no spaces or symbols");
       valid = false;
     }
     if (!values.email) {
@@ -503,25 +507,26 @@ function setupForm() {
       showError("car", "Please select a car");
       valid = false;
     }
-    if (!values.date || !form.elements.namedItem("date").validity.valid) {
-      showError("date", "Please select a valid travel date");
+    if (!values.date || !(dateInput instanceof HTMLInputElement) ||
+      !dateInput.validity.valid || values.date < todayInIndiaString()) {
+      showError("date", "Choose today or a future travel date");
       valid = false;
     }
     if (!values.passengers) {
       showError("passengers", "Please enter the number of passengers");
       valid = false;
-    } else if (!/^\d{1,3}$/.test(values.passengers) ||
+    } else if (!/^\d{1,2}$/.test(values.passengers) ||
       Number(values.passengers) < 1 ||
-      Number(values.passengers) > 40) {
-      showError("passengers", "Enter a whole number of passengers between 1 and 40");
+      Number(values.passengers) > 45) {
+      showError("passengers", "Enter a whole number of passengers between 1 and 45");
       valid = false;
     }
-    if (!values.pickup) {
-      showError("pickup", "Please enter a pickup location");
+    if (values.pickup.length < 3 || values.pickup.length > 160 || /[<>\u0000-\u001F\u007F]/.test(values.pickup)) {
+      showError("pickup", "Enter a pickup location with at least 3 characters");
       valid = false;
     }
-    if (!values.message) {
-      showError("message", "Please enter a message");
+    if (values.message.length < 10 || values.message.length > 500 || /[<>\u0000-\u001F\u007F]/.test(values.message)) {
+      showError("message", "Enter a message between 10 and 500 characters");
       valid = false;
     }
     if (!valid) {
@@ -530,11 +535,18 @@ function setupForm() {
       return;
     }
 
-    data.set("name", values.name);
-    data.set("phone", normalizedPhone);
-    data.set("email", values.email);
-    data.set("message", values.message);
-    data.set("pickup", values.pickup);
+    const payload = {
+      name: values.name,
+      phone: values.phone,
+      email: values.email,
+      service: values.service,
+      car: values.car,
+      date: values.date,
+      passengers: values.passengers,
+      pickup: values.pickup,
+      message: values.message,
+      botcheck: values.botcheck,
+    };
 
     if (window.location.protocol === "file:") {
       showStatus(
@@ -550,20 +562,15 @@ function setupForm() {
     submitButton.disabled = true;
     submitButton.textContent = "Sending...";
 
-    const submittedAtValue = new Date().toISOString();
-    const submittedAt = form.elements.namedItem("submitted_at");
-    if (submittedAt instanceof HTMLInputElement) {
-      submittedAt.value = submittedAtValue;
-    }
-    data.set("submitted_at", submittedAtValue);
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), 30000);
 
     try {
-      const response = await fetch(form.action, {
+      const response = await fetch("/api/contact", {
         method: "POST",
-        headers: { Accept: "application/json" },
-        body: data,
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(payload),
         signal: controller.signal,
       });
       let result;
