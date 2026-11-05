@@ -9,6 +9,8 @@ const BUSINESS = {
   name: "Jain Ventures",
   tagline: "Reliable Cars. Comfortable Journeys.",
   location: "N 11 D Sector Ravi Nagar, Hudco T.V center road, Chhatrapati Sambhaji Nagar MH India 431003",
+  phone: "+91 9860252341",
+  email: "gosaviongroup@gmail.com",
 };
 
 /* ------------------------------------------------------------
@@ -234,6 +236,20 @@ function applyBusinessInfo() {
   });
   document.querySelectorAll("[data-location]").forEach((el) => {
     el.textContent = BUSINESS.location;
+  });
+  document.querySelectorAll("[data-phone]").forEach((el) => {
+    el.textContent = BUSINESS.phone;
+  });
+  document.querySelectorAll("[data-phone-link]").forEach((el) => {
+    el.href = `tel:${BUSINESS.phone.replace(/[^+\d]/g, "")}`;
+    el.textContent = BUSINESS.phone;
+  });
+  document.querySelectorAll("[data-email]").forEach((el) => {
+    el.textContent = BUSINESS.email;
+  });
+  document.querySelectorAll("[data-email-link]").forEach((el) => {
+    el.href = `mailto:${BUSINESS.email}`;
+    el.textContent = BUSINESS.email;
   });
 
   const yearEl = document.getElementById("year");
