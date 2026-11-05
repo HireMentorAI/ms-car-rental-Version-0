@@ -144,15 +144,26 @@ button {
 }
 .topbar-right {
   display: flex;
-  gap: 18px;
+  gap: 20px;
   align-items: center;
+  flex-wrap: wrap;
 }
 .topbar-right a {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
   color: #e6eef7;
   transition: color 0.2s;
+}
+.topbar-right svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
 }
 .topbar-right a:hover {
   color: #fff;
@@ -161,7 +172,7 @@ button {
 @media (max-width: 640px) {
   .topbar-left { display: none; }
   .topbar-inner { justify-content: center; }
-  .topbar-right { gap: 14px; font-size: 0.78rem; }
+  .topbar-right { justify-content: center; gap: 8px 14px; font-size: 0.78rem; }
 }
 
 /* ============================================================

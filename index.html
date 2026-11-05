@@ -38,7 +38,14 @@
         Affordable Car Rentals • Clean &amp; Comfortable Cars • Easy Booking
       </div>
       <div class="topbar-right">
-        <a href="#contact" data-location>📍 N 11 D Sector Ravi Nagar, Hudco T.V center road, Chhatrapati Sambhaji Nagar MH India 431003</a>
+        <a href="tel:+919860252341" data-phone-link>
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.2 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.96.36 1.9.7 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.84.58 2.8.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span data-phone>+91 9860252341</span>
+        </a>
+        <a href="mailto:gosaviongroup@gmail.com" data-email-link>
+          <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+          <span data-email>gosaviongroup@gmail.com</span>
+        </a>
       </div>
     </div>
   </div>
@@ -259,11 +266,11 @@
             </div>
 
             <div class="contact-item">
-              <div class="contact-icon">☎️</div>
+              <div class="contact-icon">📞</div>
               <div>
                 <div class="contact-item-label">Phone</div>
                 <div class="contact-item-value">
-                  <a href="tel:+919860252341" data-phone-link>+91 9860252341</a>
+                  <a href="tel:+919860252341" data-phone-link><span data-phone>+91 9860252341</span></a>
                 </div>
               </div>
             </div>
@@ -273,7 +280,7 @@
               <div>
                 <div class="contact-item-label">Email</div>
                 <div class="contact-item-value">
-                  <a href="mailto:gosaviongroup@gmail.com" data-email-link>gosaviongroup@gmail.com</a>
+                  <a href="mailto:gosaviongroup@gmail.com" data-email-link><span data-email>gosaviongroup@gmail.com</span></a>
                 </div>
               </div>
             </div>
@@ -303,18 +310,23 @@
 
             <div class="form-status" id="formStatus" role="status" aria-live="polite" aria-atomic="true"></div>
 
-            <form id="enquiryForm" action="/api/contact" method="POST" novalidate>
+            <form id="enquiryForm" action="https://api.web3forms.com/submit" method="POST" novalidate>
+              <input type="hidden" name="access_key" value="c13992d0-c95f-409c-ad9b-02a4ce47f891" />
+              <input type="hidden" name="subject" value="New car rental enquiry" />
+              <input type="hidden" name="form_name" value="Car Rental Enquiry" />
+              <input type="hidden" name="page" value="Contact &amp; Enquiry section" />
+              <input type="hidden" name="submitted_at" id="submittedAt" />
               <input type="text" name="botcheck" class="honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" />
               <div class="form-grid">
                 <div class="form-group">
                   <label for="enquiryName">Full Name <span class="req">*</span></label>
-                  <input type="text" id="enquiryName" name="name" placeholder="Your name" minlength="3" maxlength="80" autocomplete="name" required aria-describedby="nameError" />
+                  <input type="text" id="enquiryName" name="name" placeholder="Your name" minlength="3" autocomplete="name" required aria-describedby="nameError" />
                   <div class="form-error" id="nameError" data-error="name"></div>
                 </div>
 
                 <div class="form-group">
                   <label for="enquiryPhone">Phone Number <span class="req">*</span></label>
-                  <input type="tel" id="enquiryPhone" name="phone" placeholder="10-digit phone number" inputmode="numeric" pattern="[0-9]{10}" minlength="10" maxlength="10" autocomplete="tel" required aria-describedby="phoneError" />
+                  <input type="text" id="enquiryPhone" name="phone" placeholder="10-digit phone number" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel" required aria-describedby="phoneError" />
                   <div class="form-error" id="phoneError" data-error="phone"></div>
                 </div>
 
@@ -349,13 +361,13 @@
 
                 <div class="form-group">
                   <label for="passengers">Number of Passengers <span class="req">*</span></label>
-                  <input type="text" id="passengers" name="passengers" inputmode="numeric" pattern="[0-9]{1,2}" maxlength="2" required placeholder="1–45" aria-describedby="passengersError" />
+                  <input type="text" id="passengers" name="passengers" inputmode="numeric" pattern="[0-9]{1,2}" maxlength="2" minlength="1" required placeholder="e.g. 4" aria-describedby="passengersError" />
                   <div class="form-error" id="passengersError" data-error="passengers"></div>
                 </div>
 
                 <div class="form-group">
                   <label for="pickup">Pickup Location <span class="req">*</span></label>
-                  <input type="text" id="pickup" name="pickup" placeholder="Pickup city / area" minlength="3" maxlength="160" required aria-describedby="pickupError" />
+                  <input type="text" id="pickup" name="pickup" placeholder="Pickup city / area" minlength="3" required aria-describedby="pickupError" />
                   <div class="form-error" id="pickupError" data-error="pickup"></div>
                 </div>
 
@@ -382,8 +394,8 @@
           <h4 data-name>Jain Ventures</h4>
           <p data-tagline>Reliable Cars. Comfortable Journeys.</p>
           <div class="footer-contact">
-            <a href="tel:+919860252341" data-phone-link>+91 9860252341</a>
-            <a href="mailto:gosaviongroup@gmail.com" data-email-link>gosaviongroup@gmail.com</a>
+            <a href="tel:+919860252341" data-phone-link><span data-phone>+91 9860252341</span></a>
+            <a href="mailto:gosaviongroup@gmail.com" data-email-link><span data-email>gosaviongroup@gmail.com</span></a>
           </div>
         </div>
 
@@ -403,8 +415,8 @@
           <h5>Contact</h5>
           <ul>
             <li><a href="#contact">Send an enquiry</a></li>
-            <li><a href="tel:+919860252341" data-phone-link>+91 9860252341</a></li>
-            <li><a href="mailto:gosaviongroup@gmail.com" data-email-link>gosaviongroup@gmail.com</a></li>
+            <li><a href="tel:+919860252341" data-phone-link><span data-phone>+91 9860252341</span></a></li>
+            <li><a href="mailto:gosaviongroup@gmail.com" data-email-link><span data-email>gosaviongroup@gmail.com</span></a></li>
             <li><span data-location>N 11 D Sector Ravi Nagar, Hudco T.V center road, Chhatrapati Sambhaji Nagar MH India 431003</span></li>
           </ul>
         </div>

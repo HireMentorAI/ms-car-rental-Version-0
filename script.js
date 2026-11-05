@@ -8,9 +8,9 @@
 const BUSINESS = {
   name: "Jain Ventures",
   tagline: "Reliable Cars. Comfortable Journeys.",
-  location: "N 11 D Sector Ravi Nagar, Hudco T.V center road, Chhatrapati Sambhaji Nagar MH India 431003",
   phone: "+91 9860252341",
   email: "gosaviongroup@gmail.com",
+  location: "N 11 D Sector Ravi Nagar, Hudco T.V center road, Chhatrapati Sambhaji Nagar MH India 431003",
 };
 
 /* ------------------------------------------------------------
@@ -187,19 +187,8 @@ const TOURISM_SERVICES = [
   },
 ];
 
-const NAME_PATTERN = /^\p{L}+(?: +\p{L}+)*$/u;
+const NAME_PATTERN = /^[\p{L} ]+$/u;
 const EMAIL_PATTERN = /^(?!.*\.\.)[A-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,63}$/i;
-
-function todayInIndiaString() {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
-  const fields = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
-  return `${fields.year}-${fields.month}-${fields.day}`;
-}
 
 /* ------------------------------------------------------------
    4. WHY CHOOSE US
@@ -244,15 +233,13 @@ function applyBusinessInfo() {
     el.textContent = BUSINESS.phone;
   });
   document.querySelectorAll("[data-phone-link]").forEach((el) => {
-    el.href = `tel:${BUSINESS.phone.replace(/[^+\d]/g, "")}`;
-    el.textContent = BUSINESS.phone;
+    el.href = `tel:${BUSINESS.phone.replace(/[^\d+]/g, "")}`;
   });
   document.querySelectorAll("[data-email]").forEach((el) => {
     el.textContent = BUSINESS.email;
   });
   document.querySelectorAll("[data-email-link]").forEach((el) => {
     el.href = `mailto:${BUSINESS.email}`;
-    el.textContent = BUSINESS.email;
   });
 
   const yearEl = document.getElementById("year");
@@ -430,8 +417,6 @@ function setupForm() {
   const status = document.getElementById("formStatus");
   if (!form || !status) return;
   let isSubmitting = false;
-  const dateInput = form.elements.namedItem("date");
-  if (dateInput instanceof HTMLInputElement) dateInput.min = todayInIndiaString();
 
   const showError = (field, msg) => {
     const el = form.querySelector(`[data-error="${field}"]`);
@@ -450,6 +435,17 @@ function setupForm() {
     status.setAttribute("role", isError ? "alert" : "status");
   };
 
+  const dateInput = form.elements.namedItem("date");
+  if (dateInput instanceof HTMLInputElement) {
+    const today = new Date();
+    const localDate = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0"),
+    ].join("-");
+    dateInput.min = localDate;
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -462,7 +458,6 @@ function setupForm() {
     const values = Object.fromEntries(data.entries());
 
     values.name = values.name.trim();
-    values.phone = values.phone.trim();
     values.email = values.email.trim();
     values.car = values.car.trim();
     values.date = values.date.trim();
@@ -473,19 +468,15 @@ function setupForm() {
     if (!values.name) {
       showError("name", "Please enter your name");
       valid = false;
-    } else if (
-      values.name.length < 3 ||
-      values.name.length > 80 ||
-      !NAME_PATTERN.test(values.name)
-    ) {
-      showError("name", "Use at least 3 letters and spaces only");
+    } else if (values.name.length < 3 || !NAME_PATTERN.test(values.name)) {
+      showError("name", "Enter at least 3 characters using letters and spaces only");
       valid = false;
     }
     if (!values.phone) {
       showError("phone", "Please enter your phone number");
       valid = false;
     } else if (!/^\d{10}$/.test(values.phone)) {
-      showError("phone", "Enter exactly 10 digits, with no spaces or symbols");
+      showError("phone", "Enter exactly 10 digits with no spaces or symbols");
       valid = false;
     }
     if (!values.email) {
@@ -507,9 +498,8 @@ function setupForm() {
       showError("car", "Please select a car");
       valid = false;
     }
-    if (!values.date || !(dateInput instanceof HTMLInputElement) ||
-      !dateInput.validity.valid || values.date < todayInIndiaString()) {
-      showError("date", "Choose today or a future travel date");
+    if (!values.date || !form.elements.namedItem("date").validity.valid) {
+      showError("date", "Select today or a future travel date");
       valid = false;
     }
     if (!values.passengers) {
@@ -521,11 +511,11 @@ function setupForm() {
       showError("passengers", "Enter a whole number of passengers between 1 and 45");
       valid = false;
     }
-    if (values.pickup.length < 3 || values.pickup.length > 160 || /[<>\u0000-\u001F\u007F]/.test(values.pickup)) {
-      showError("pickup", "Enter a pickup location with at least 3 characters");
+    if (values.pickup.length < 3) {
+      showError("pickup", "Enter a pickup location of at least 3 characters");
       valid = false;
     }
-    if (values.message.length < 10 || values.message.length > 500 || /[<>\u0000-\u001F\u007F]/.test(values.message)) {
+    if (values.message.length < 10 || values.message.length > 500) {
       showError("message", "Enter a message between 10 and 500 characters");
       valid = false;
     }
@@ -535,18 +525,11 @@ function setupForm() {
       return;
     }
 
-    const payload = {
-      name: values.name,
-      phone: values.phone,
-      email: values.email,
-      service: values.service,
-      car: values.car,
-      date: values.date,
-      passengers: values.passengers,
-      pickup: values.pickup,
-      message: values.message,
-      botcheck: values.botcheck,
-    };
+    data.set("name", values.name);
+    data.set("phone", values.phone);
+    data.set("email", values.email);
+    data.set("message", values.message);
+    data.set("pickup", values.pickup);
 
     if (window.location.protocol === "file:") {
       showStatus(
@@ -562,15 +545,20 @@ function setupForm() {
     submitButton.disabled = true;
     submitButton.textContent = "Sending...";
 
+    const submittedAtValue = new Date().toISOString();
+    const submittedAt = form.elements.namedItem("submitted_at");
+    if (submittedAt instanceof HTMLInputElement) {
+      submittedAt.value = submittedAtValue;
+    }
+    data.set("submitted_at", submittedAtValue);
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), 30000);
 
     try {
-      const response = await fetch("/api/contact", {
+      const response = await fetch(form.action, {
         method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify(payload),
+        headers: { Accept: "application/json" },
+        body: data,
         signal: controller.signal,
       });
       let result;
