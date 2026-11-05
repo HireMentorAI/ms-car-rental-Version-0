@@ -49,29 +49,29 @@ Everything on the page updates automatically — no need to touch `index.html`.
 
 ## ✉️ Contact Enquiry Setup
 
-The contact form posts directly to `https://api.web3forms.com/submit` using the
-provided Web3Forms access key in a hidden form field. This is a static HTML site
-with no build-time environment-variable support, so the access key is visible in
-the browser source by design. Use only a Web3Forms form access key, never a
-private backend credential. If the key needs to be rotated, update the hidden
-`access_key` field in `index.html`.
+The form sends JSON to the same-origin `/api/contact` route. The server validates
+all fields, accepts an optional email, enforces the configured passenger cap,
+rejects past or malformed dates and markup, checks service/car allowlists,
+verifies Cloudflare Turnstile, applies an Upstash per-IP rate limit, and
+deduplicates matching submissions for two minutes. The contact endpoint allows
+five submissions per IP per 15 minutes; the public form-config endpoint has its
+own 60 requests per IP per minute limit. Both endpoints are same-origin only,
+reject unexpected query parameters, and return non-cacheable responses. Structured
+security events are written to Vercel function logs with event names and request
+IDs only; rate counters and duplicate fingerprints do not contain raw IPs or
+enquiry details. It forwards only the
+necessary enquiry fields to Web3Forms and does not save customer data in this
+project. A public `/api/form-config` route returns only the Turnstile site key
+and passenger limit; secret values are never returned to the browser.
 
-In Web3Forms, verify the destination email inbox for the access key before
-expecting notifications. The form includes name, phone, email, service,
-car, travel date, passenger count, pickup location, message, subject, form/page
-metadata, and a submission timestamp. The service selection includes Jain Tirth
-Yatra, Ashtavinayak Darshan, Jyotirling Darshan, Char Dham Yatra, Airport
-Transfers, Corporate Travel, and Custom Itinerary Planning. It uses the
-supported honeypot field, validates inputs, reports request/API errors, prevents
-duplicate submits, and resets only after a successful API response.
-Names must be 2–80 letters with supported name punctuation; Indian mobile
-numbers are normalized to `+91` plus 10 digits; email is required and validated;
-car, travel date, passenger count (1–40), pickup location, and message are also
-required.
-
-The original `/api/contact` serverless endpoint remains available for any
-separate integrations that use it; the website form no longer depends on that
-endpoint or its rate-limiter environment variables.
+Configure every variable in `.env.example` in Vercel. Create a Cloudflare
+Turnstile widget for the production hostname and set its site and secret keys.
+Set `ALLOWED_ORIGINS` to the exact comma-separated HTTPS origins permitted to
+submit, and create a random `ENQUIRY_HASH_SECRET` of at least 32 characters.
+The form fails closed if required protections are not configured. `MAX_PASSENGERS`
+defaults to 40 (allowed configuration range 1–100); rate limiting defaults to
+five submissions per IP per 15 minutes. For local development, add the exact
+localhost origin to `ALLOWED_ORIGINS` and use a Turnstile test widget/key.
 
 ## 🚀 Run Locally
 
@@ -98,23 +98,13 @@ Open [http://localhost:3000](http://localhost:3000)
 3. Vercel auto-detects a static site. Click **Deploy**.
 4. Add your custom domain in **Settings → Domains**.
 
-> No build command needed. Vercel serves `index.html` directly. Verify the
-> destination email inbox in Web3Forms before relying on email submissions.
+> No build command needed. Vercel serves `index.html` and the serverless routes
+> in `api/`. Configure all server-side environment variables before accepting
+> enquiries.
 
-### Deploy static files to Netlify (drag & drop)
-
-1. Go to [app.netlify.com/drop](https://app.netlify.com/drop).
-2. Drag the entire `ms-car-rental` folder onto the page.
-3. The static site can submit directly to Web3Forms; verify its recipient inbox
-   before relying on email submissions.
-
-### Deploy static files to Cloudflare Pages
-
-1. Push to GitHub.
-2. Go to **Cloudflare Pages** → **Create project** → connect repo.
-3. Leave build command blank, output directory = `/` (root).
-4. The static site can submit directly to Web3Forms; verify its recipient inbox
-   before relying on email submissions.
+This protected form requires Vercel serverless routes in `api/`. A static-only
+deployment will not include server validation, rate limiting, deduplication, or
+CAPTCHA verification and must not be used for production enquiries.
 
 ## 🧪 Final Checklist
 
@@ -123,7 +113,8 @@ Open [http://localhost:3000](http://localhost:3000)
 - ✅ Fleet enquiry shortcuts select the requested vehicle in the form
 - ✅ Tourism service cards link to the enquiry form and preselect their service
 - ✅ Enquiry submissions include the selected tourism service
-- ✅ Contact form validates and emails enquiries through Web3Forms
+- ✅ Contact form validates in the browser and serverless route
+- ✅ Contact submissions require Turnstile and Upstash protection
 - ✅ Submission loading, success, and error states are accessible
 - ✅ Responsive on mobile/tablet/desktop
 - ✅ No fake claims, prices, ratings, or awards
