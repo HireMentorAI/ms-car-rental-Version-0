@@ -462,9 +462,19 @@ function setupForm() {
   const tokenInput = form.elements.namedItem("turnstileToken");
   const dateInput = form.elements.namedItem("date");
   const passengerInput = form.elements.namedItem("passengers");
+  const isStaticPreview = window.location.protocol === "file:";
   if (dateInput instanceof HTMLInputElement) dateInput.min = localDateString();
 
   const initializeSecurityCheck = async () => {
+    if (isStaticPreview) {
+      submitButton.disabled = false;
+      showStatus(
+        "Preview mode: you can check the form, but enquiries are not sent. Run with Vercel Dev to enable secure submission.",
+        false
+      );
+      return;
+    }
+
     try {
       const configResponse = await fetch("/api/form-config", {
         headers: { Accept: "application/json" },
@@ -516,7 +526,13 @@ function setupForm() {
       });
     } catch {
       submitButton.disabled = true;
-      showStatus("Secure enquiry submission is temporarily unavailable. Please contact us by phone or email.", true);
+      const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+      showStatus(
+        isLocal
+          ? "Local form setup is incomplete. Start the project with Vercel Dev and configure the local environment values in .env.local."
+          : "Secure enquiry submission is temporarily unavailable. Please contact us by phone or email.",
+        true
+      );
     }
   };
   initializeSecurityCheck();
@@ -593,7 +609,7 @@ function setupForm() {
       showError("message", "Enter a message using plain text (up to 3,000 characters)");
       valid = false;
     }
-    if (!tokenInput.value) {
+    if (!isStaticPreview && !tokenInput.value) {
       showStatus("Please complete the security check before sending your enquiry.", true);
       valid = false;
     }
@@ -607,10 +623,10 @@ function setupForm() {
       return;
     }
 
-    if (window.location.protocol === "file:") {
+    if (isStaticPreview) {
       showStatus(
-        "This page is open as a local file. Open the website from its deployed URL or a local web server to submit the enquiry.",
-        true
+        "Form check passed. This preview did not send your enquiry. Run with Vercel Dev to submit it securely.",
+        false
       );
       return;
     }

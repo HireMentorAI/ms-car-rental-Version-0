@@ -71,25 +71,36 @@ submit, and create a random `ENQUIRY_HASH_SECRET` of at least 32 characters.
 The form fails closed if required protections are not configured. `MAX_PASSENGERS`
 defaults to 40 (allowed configuration range 1–100); rate limiting defaults to
 five submissions per IP per 15 minutes. For local development, add the exact
-localhost origin to `ALLOWED_ORIGINS` and use a Turnstile test widget/key.
+localhost origin to `ALLOWED_ORIGINS` and use separate development credentials
+and a Turnstile test widget/key.
 
 ## 🚀 Run Locally
 
-Double-clicking `index.html` opens a static preview only; browser security
-prevents form submissions from a `file://` URL. Run a local web server or use
-the deployed website to submit enquiries.
+The enquiry API routes must run for the secure form to initialize. Opening
+`index.html` directly or using a static-only server such as Python's
+`http.server` cannot run the routes and will not submit enquiries.
 
-Or run a local server (optional):
+Run the project through Vercel's local runtime:
 
 ```bash
-# Python 3
-python -m http.server 3000
-
-# Node (if installed)
-npx serve .
+npx vercel login
+npx vercel link
+npx vercel env pull .env.local
+npx vercel dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open the local URL printed by `vercel dev` (usually
+`http://localhost:3000`). Configure the Development environment variables in
+Vercel before pulling them. Alternatively, create `.env.local` from
+`.env.example` and enter the values there. `.env.local` is ignored by Git.
+
+Local form operation requires working Web3Forms and Upstash development
+credentials, Turnstile test site/secret keys, and an `ENQUIRY_HASH_SECRET` of
+at least 32 random characters. Set `ALLOWED_ORIGINS` to the exact local origin,
+for example `http://localhost:3000` (and the `127.0.0.1` origin only if you
+will use it). Do not use production credentials for local testing when
+separate development credentials are available. The API intentionally fails
+closed if required security services are missing or unavailable.
 
 ## ☁️ Deploy to Vercel (Free)
 
