@@ -261,11 +261,20 @@ async function handleContact(req, res) {
     if (email) formData.email = email;
     const providerResponse = await fetch(WEB3FORMS_URL, {
       method: "POST",
-      headers: { Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      body: new URLSearchParams(formData),
       signal: AbortSignal.timeout(10000),
     });
-    if (!providerResponse.ok || (await providerResponse.json()).success !== true) {
+    let providerResult;
+    try {
+      providerResult = await providerResponse.json();
+    } catch {
+      providerResult = null;
+    }
+    if (!providerResponse.ok || providerResult?.success !== true) {
       logSecurityEvent("contact_provider_rejected", req);
       return respond(res, 502, { error: "We couldn't send your enquiry. Please try again shortly." });
     }
